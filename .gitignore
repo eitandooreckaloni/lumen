@@ -1,0 +1,44 @@
+# Claude Code symlinks
+agents/
+skills/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Misc
+.cache/
+*.tmp
