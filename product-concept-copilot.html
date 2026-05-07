@@ -1,0 +1,1486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lumen — Product Concept</title>
+<style>
+  :root {
+    --bg: #FBFAF7;
+    --paper: #FFFFFF;
+    --ink: #1A1A1A;
+    --ink-2: #3A3A3A;
+    --muted: #6B6B6B;
+    --line: rgba(26, 26, 26, 0.12);
+    --line-2: rgba(26, 26, 26, 0.20);
+    --accent: #B85450;
+    --accent-2: #8E3F3C;
+    --serif: 'Iowan Old Style','Palatino Linotype','Palatino','Georgia',serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    margin: 0;
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: rgba(184, 84, 80, 0.15); }
+
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 32px 120px; }
+
+  /* Hero */
+  .hero { padding: 88px 0 64px; }
+  .mark {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+    font-weight: 400;
+  }
+  .meta-top {
+    margin-top: 26px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1.lede {
+    font-size: clamp(40px, 6vw, 56px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 400;
+    margin: 12px 0 20px;
+    max-width: 18ch;
+  }
+  h1.lede em { color: var(--accent); font-style: italic; }
+  .deck {
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--ink-2);
+    max-width: 56ch;
+    margin: 0 0 26px;
+  }
+  .rule {
+    width: 40px; height: 1px;
+    background: var(--accent);
+    margin: 28px 0 0;
+  }
+  nav.toc {
+    margin-top: 28px;
+    display: flex; flex-wrap: wrap; gap: 14px 22px;
+  }
+  nav.toc a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 0.5px solid var(--line);
+    padding-bottom: 2px;
+  }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* Sections */
+  section { padding: 64px 0 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  h2 {
+    font-size: 32px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    font-weight: 400;
+    margin: 0 0 22px;
+    max-width: 26ch;
+  }
+  h2 em { color: var(--accent); font-style: italic; }
+  h3 {
+    font-size: 20px;
+    line-height: 1.35;
+    letter-spacing: -0.005em;
+    font-weight: 400;
+    margin: 28px 0 8px;
+  }
+  h3 em { font-style: italic; color: var(--accent); }
+  p { margin: 0 0 14px; max-width: 62ch; }
+  p .accent { color: var(--accent); font-style: italic; }
+  p em { font-style: italic; }
+  .muted { color: var(--muted); }
+  a.in-text { color: var(--accent); text-decoration: none; border-bottom: 0.5px solid var(--accent); }
+
+  /* Pull quote */
+  .pull {
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.4;
+    color: var(--ink);
+    border-left: 1px solid var(--accent);
+    padding: 10px 0 10px 24px;
+    margin: 32px 0;
+    max-width: 32ch;
+  }
+  .pull cite {
+    display: block;
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Two-column */
+  .col-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 18px;
+  }
+  @media (max-width: 700px) { .col-2 { grid-template-columns: 1fr; gap: 14px; } }
+  .col-2 .block h3 { margin-top: 0; }
+  .col-2 .block .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  /* Capabilities matrix */
+  .matrix { margin-top: 22px; border-top: 1px solid var(--line-2); }
+  .row {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 28px;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+  @media (max-width: 700px) { .row { grid-template-columns: 1fr; gap: 6px; } }
+  .row .stage-label .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 2px;
+  }
+  .row .stage-label .name {
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+  }
+  .row .stage-label .auto {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .row .stage-body { font-size: 16px; line-height: 1.6; color: var(--ink-2); }
+  .row .stage-body .what { color: var(--ink); }
+  .row .stage-body .out { display: block; margin-top: 6px; color: var(--muted); font-size: 14.5px; font-style: italic; }
+
+  /* Numbered list */
+  ol.steps {
+    counter-reset: step;
+    list-style: none;
+    padding: 0;
+    margin: 18px 0 0;
+    border-top: 1px solid var(--line-2);
+  }
+  ol.steps li {
+    counter-increment: step;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  ol.steps li::before {
+    content: counter(step, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--accent);
+  }
+  ol.steps li .step-h {
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 4px;
+    display: block;
+  }
+  ol.steps li .step-d {
+    font-size: 15.5px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  /* Walkthrough chat — editorial format */
+  .conversation {
+    margin: 24px 0 0;
+    padding-left: 4px;
+    border-left: 0.5px solid var(--line-2);
+  }
+  .turn { padding: 14px 0 14px 28px; position: relative; }
+  .turn::before {
+    content: ''; position: absolute;
+    left: -3px; top: 22px;
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--line-2);
+  }
+  .turn.agent::before { background: var(--accent); }
+  .turn .who {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .turn.agent .who { color: var(--accent); }
+  .turn .said {
+    font-size: 16.5px;
+    line-height: 1.55;
+    color: var(--ink);
+  }
+  .turn .said em { font-style: italic; }
+  .turn.agent .said { font-style: italic; color: var(--ink); }
+  .turn .said .listing {
+    margin: 10px 0 0;
+    padding-left: 0;
+    list-style: none;
+    font-family: var(--mono);
+    font-size: 13.5px;
+    color: var(--ink-2);
+    line-height: 1.7;
+    font-style: normal;
+  }
+  .turn .said .listing li { padding: 1px 0; }
+  .turn .said .listing li::before {
+    content: '·  ';
+    color: var(--accent);
+  }
+
+  /* Swipe cards (editorial style) */
+  .deck-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0 8px;
+  }
+  @media (max-width: 700px) { .deck-row { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--paper);
+    border: 0.5px solid var(--line-2);
+    border-radius: 4px;
+    padding: 18px 18px 16px;
+    min-height: 130px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .card .card-h {
+    font-style: italic;
+    font-size: 19px;
+    margin-bottom: 4px;
+  }
+  .card .card-d {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--muted);
+  }
+  .card .card-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .card .card-actions .keep { color: var(--accent); }
+
+  /* People & track mockups */
+  .people-card, .track-card { background: var(--paper); border: 0.5px solid var(--line-2); border-radius: 4px; padding: 18px 20px; margin-top: 14px; }
+  .people-company { font-style: italic; font-size: 18px; color: var(--ink); }
+  .people-company-meta { font-size: 13px; color: var(--muted); margin: 2px 0 14px; }
+  .people-section { padding: 10px 0; border-top: 0.5px dashed var(--line); }
+  .people-section:first-of-type { border-top: 0; padding-top: 4px; }
+  .people-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .people-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill-li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 7px; border: 0.5px solid var(--line-2); border-radius: 4px; font-size: 12.5px; color: var(--ink-2); text-decoration: none; background: #FCFAF6; }
+  .pill-li:hover { border-color: var(--accent); color: var(--accent); }
+  .pill-li::before { content: 'in'; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; background: #0A66C2; color: #fff; font-size: 9px; font-weight: 600; border-radius: 2px; font-family: var(--mono); }
+  .people-add { display: inline-block; margin-top: 12px; padding: 5px 11px; font-family: var(--mono); font-size: 11px; color: var(--muted); border: 0.5px dashed var(--line-2); border-radius: 4px; cursor: pointer; letter-spacing: 0.04em; }
+  .people-add:hover { color: var(--accent); border-color: var(--accent); }
+  .track-row { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .track-name { font-style: italic; font-size: 17px; color: var(--ink); }
+  .track-status { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .track-msg { font-size: 14px; line-height: 1.55; color: var(--ink-2); font-style: italic; padding: 12px 0; border-top: 0.5px dashed var(--line); border-bottom: 0.5px dashed var(--line); margin: 12px 0; }
+  .track-actions { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .track-reminder { font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--accent); text-transform: uppercase; }
+  .track-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+  .btn-l { padding: 5px 12px; border: 0.5px solid var(--line-2); border-radius: 4px; background: var(--paper); font-family: inherit; font-size: 12.5px; color: var(--ink-2); cursor: pointer; }
+  .btn-l:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Flow / screen frames */
+  .flow-frame { background: var(--paper); border: 0.5px solid var(--line-2); border-radius: 6px; margin: 14px 0 22px; overflow: hidden; }
+  .flow-chrome { background: #F4F0E6; border-bottom: 0.5px solid var(--line); padding: 7px 12px; display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; color: var(--muted); }
+  .flow-chrome .dots { display: flex; gap: 5px; }
+  .flow-chrome .dots span { width: 8px; height: 8px; border-radius: 50%; background: rgba(0,0,0,0.18); }
+  .flow-chrome .label { margin-left: auto; letter-spacing: 0.06em; }
+  .flow-caption { display: grid; grid-template-columns: 60px 1fr; gap: 16px; margin-top: 28px; align-items: baseline; }
+  .flow-caption .num { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; color: var(--accent); }
+  .flow-caption .desc { font-size: 14.5px; color: var(--muted); font-style: italic; line-height: 1.5; }
+  .flow-arrow { text-align: center; font-family: var(--mono); font-size: 13px; color: var(--accent); margin: 4px 0; letter-spacing: 0.1em; }
+  .app-nav { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 0.5px solid var(--line); background: var(--bg); }
+  .app-nav .app-mark { font-style: italic; font-size: 14px; color: var(--accent); letter-spacing: -0.01em; font-family: var(--serif); }
+  .app-nav .nav-tabs { display: flex; gap: 4px; margin-left: 4px; }
+  .app-nav .nav-tab { padding: 4px 10px; font-size: 11px; font-family: var(--mono); letter-spacing: 0.06em; color: var(--muted); border-radius: 3px; }
+  .app-nav .nav-tab.active { background: var(--paper); color: var(--ink); border: 0.5px solid var(--line-2); }
+  .app-nav .nav-actions { margin-left: auto; display: flex; gap: 12px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .app-nav .nav-actions span { cursor: pointer; }
+  .app-nav .nav-actions span:hover { color: var(--accent); }
+  .app-chat { padding: 14px 18px 4px; min-height: 100px; }
+  .app-chat .turn { padding: 8px 0 8px 18px; position: relative; }
+  .app-chat .turn::before { content: ''; position: absolute; left: 0; top: 16px; width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+  .app-chat .turn.agent::before { background: var(--accent); }
+  .app-chat .turn .who { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .app-chat .turn.agent .who { color: var(--accent); }
+  .app-chat .turn .said { font-size: 13.5px; line-height: 1.55; color: var(--ink); }
+  .app-chat .turn.agent .said { font-style: italic; }
+  .app-chat .turn .said .listing { margin: 6px 0 0; padding-left: 0; list-style: none; font-family: var(--mono); font-size: 12px; font-style: normal; color: var(--ink-2); line-height: 1.7; }
+  .app-chat .turn .said .listing li::before { content: '·  '; color: var(--accent); }
+  .app-input { border-top: 0.5px solid var(--line); padding: 10px 16px; display: flex; align-items: center; gap: 10px; background: var(--bg); }
+  .app-input .field { flex: 1; font-family: var(--serif); font-size: 13px; color: var(--muted); font-style: italic; }
+  .app-input .send { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; }
+  .chat-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .chat-btn { padding: 4px 10px; border: 0.5px solid var(--line-2); border-radius: 4px; background: var(--paper); font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-2); cursor: pointer; font-style: normal; }
+  .chat-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .chat-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .chat-btn.primary:hover { background: var(--accent-2); color: #fff; }
+  .chat-swipe-deck { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin: 10px 0 0; font-style: normal; }
+  .chat-swipe-card { border: 0.5px solid var(--line-2); border-radius: 4px; padding: 10px 12px; font-family: var(--serif); }
+  .chat-swipe-card .csc-name { font-style: italic; font-size: 14px; color: var(--ink); }
+  .chat-swipe-card .csc-d { font-size: 12px; color: var(--muted); margin: 2px 0 6px; font-style: normal; }
+  .chat-swipe-card .csc-actions { display: flex; gap: 8px; font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.04em; }
+  .chat-swipe-card .csc-actions .keep { color: var(--accent); }
+  .app-dashboard { padding: 16px 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dash-card { border: 0.5px solid var(--line); border-radius: 4px; padding: 12px 14px; }
+  .dash-card .dh { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .dash-card .dh em { color: var(--accent); font-style: normal; }
+  .dash-card ul { margin: 0; padding: 0; list-style: none; }
+  .dash-card li { font-size: 12.5px; padding: 4px 0; border-bottom: 0.5px dashed var(--line); color: var(--ink); }
+  .dash-card li:last-child { border-bottom: 0; }
+  .dash-card li em { color: var(--accent); font-style: italic; font-size: 10.5px; margin-left: 6px; font-family: var(--mono); letter-spacing: 0.04em; }
+  .app-notes { padding: 22px; }
+  .notes-drop { border: 0.5px dashed var(--line-2); border-radius: 6px; padding: 24px 18px; text-align: center; color: var(--muted); font-style: italic; font-size: 13.5px; line-height: 1.5; }
+  .notes-drop .hint { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; font-style: normal; }
+  .notes-list { margin-top: 16px; border-top: 0.5px solid var(--line); padding-top: 8px; }
+  .notes-list .note-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; border-bottom: 0.5px dashed var(--line); color: var(--ink); }
+  .notes-list .note-row:last-child { border-bottom: 0; }
+  .notes-list .note-row .when { font-family: var(--mono); font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .app-signin { padding: 56px 28px; text-align: center; }
+  .app-signin .si-mark { font-family: var(--serif); font-style: italic; font-size: 30px; color: var(--accent); letter-spacing: -0.01em; }
+  .app-signin .si-tag { font-size: 13.5px; color: var(--muted); margin: 8px 0 26px; font-style: italic; }
+  .app-signin .si-btn { display: inline-block; padding: 9px 24px; border: 0.5px solid var(--ink); border-radius: 3px; font-family: var(--sans); font-size: 13px; color: var(--ink); background: transparent; font-weight: 400; cursor: pointer; text-decoration: none; }
+  .app-signin .si-btn:hover { background: var(--ink); color: var(--paper); }
+  .app-signin .si-aside { margin-top: 16px; font-family: var(--sans); font-size: 11.5px; color: var(--muted); }
+
+  /* Dual-pane working mode */
+  .app-split { display: grid; grid-template-columns: 1fr 280px; min-height: 360px; }
+  @media (max-width: 700px) { .app-split { grid-template-columns: 1fr; } }
+  .app-split-left { padding: 18px 20px; border-right: 0.5px solid var(--line); background: var(--paper); }
+  .app-split-right { display: flex; flex-direction: column; background: var(--bg); }
+  .split-chat-header { padding: 10px 14px; border-bottom: 0.5px solid var(--line); font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+  .split-chat-header .new-msg { color: var(--muted); font-size: 9px; letter-spacing: 0.08em; }
+  .split-chat { padding: 10px 14px 6px; flex: 1; }
+  .split-chat .turn { padding: 8px 0 8px 16px; position: relative; }
+  .split-chat .turn::before { content: ''; position: absolute; left: 0; top: 14px; width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+  .split-chat .turn.agent::before { background: var(--accent); }
+  .split-chat .turn .who { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .split-chat .turn.agent .who { color: var(--accent); }
+  .split-chat .turn .said { font-size: 12.5px; line-height: 1.55; color: var(--ink); }
+  .split-chat .turn.agent .said { font-style: italic; }
+  .split-chat .turn .said .listing { margin: 6px 0 0; padding-left: 0; list-style: none; font-family: var(--mono); font-size: 11px; font-style: normal; color: var(--ink-2); line-height: 1.7; }
+  .split-chat .turn .said .listing li::before { content: '·  '; color: var(--accent); }
+  .split-chat .chat-actions { margin-top: 8px; }
+  .split-input { border-top: 0.5px solid var(--line); padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
+  .split-input .field { flex: 1; font-family: var(--serif); font-size: 12px; color: var(--muted); font-style: italic; }
+  .split-input .send { font-family: var(--mono); font-size: 11px; color: var(--accent); letter-spacing: 0.06em; }
+  .split-card-deck { display: grid; grid-template-columns: 1fr; gap: 6px; margin: 8px 0 0; font-style: normal; }
+  .split-card-deck .chat-swipe-card { padding: 8px 10px; }
+  .split-card-deck .chat-swipe-card .csc-name { font-size: 13px; }
+  .split-card-deck .chat-swipe-card .csc-d { font-size: 11px; margin: 2px 0 4px; }
+
+  /* Dashboard sections (working mode) */
+  .dash-section { margin-bottom: 16px; padding-bottom: 12px; border-bottom: 0.5px solid var(--line); }
+  .dash-section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+  .ds-h { font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .ds-h em { color: var(--accent); font-style: normal; }
+  .dash-hypo { font-style: italic; font-size: 14px; color: var(--ink); line-height: 1.4; }
+  .dash-hypo .hypo-tag { font-family: var(--mono); font-size: 9px; color: var(--accent); margin-left: 6px; font-style: normal; letter-spacing: 0.08em; }
+  .dash-questions { list-style: none; padding: 0; margin: 0; }
+  .dash-questions li { padding: 6px 0 6px 22px; font-size: 12.5px; color: var(--ink); position: relative; line-height: 1.45; border-bottom: 0.5px dashed var(--line); }
+  .dash-questions li:last-child { border-bottom: 0; padding-bottom: 0; }
+  .dash-questions li::before { position: absolute; left: 4px; top: 6px; font-family: var(--mono); font-size: 12px; font-weight: 500; }
+  .dash-questions li.open::before { content: '?'; color: var(--muted); }
+  .dash-questions li.partial::before { content: '~'; color: var(--accent); }
+  .dash-questions li.answered::before { content: '✓'; color: var(--accent); }
+  .dash-questions li.answered { color: var(--muted); }
+  .dash-questions li.added { background: rgba(184, 84, 80, 0.06); margin: 0 -8px; padding-left: 30px; padding-right: 8px; border-radius: 3px; }
+  .dash-pipeline { list-style: none; padding: 0; margin: 0; }
+  .dash-pipeline li { padding: 5px 0; font-size: 12.5px; color: var(--ink); border-bottom: 0.5px dashed var(--line); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .dash-pipeline li:last-child { border-bottom: 0; }
+  .dash-pipeline li em { font-family: var(--mono); font-size: 9.5px; color: var(--accent); font-style: normal; letter-spacing: 0.04em; white-space: nowrap; text-transform: uppercase; }
+  .dash-pipeline li.muted em { color: var(--muted); }
+
+  /* Updated card actions for thumbs */
+  .chat-swipe-card .csc-actions.thumbs { padding-top: 6px; border-top: 0.5px solid var(--line); margin-top: 8px; gap: 14px; font-family: var(--sans); font-size: 11px; justify-content: flex-end; }
+  .chat-swipe-card .csc-actions.thumbs .interested { color: var(--accent); cursor: pointer; }
+  .chat-swipe-card .csc-actions.thumbs .not-interested { color: var(--muted); cursor: pointer; }
+
+  /* Never-list (anti-patterns) */
+  .never-list { list-style: none; padding: 0; margin: 14px 0 0; }
+  .never-list li { padding: 10px 0 10px 24px; border-top: 0.5px dashed var(--line); font-size: 15.5px; color: var(--ink-2); position: relative; line-height: 1.55; }
+  .never-list li:last-child { border-bottom: 0.5px dashed var(--line); }
+  .never-list li::before { content: '×'; position: absolute; left: 4px; top: 10px; color: var(--accent); font-weight: 500; font-size: 14px; }
+  .never-list em { color: var(--ink); font-style: italic; }
+
+  /* Architecture */
+  .arch {
+    margin-top: 18px;
+    border-top: 1px solid var(--line-2);
+  }
+  .arch .layer {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 24px;
+    align-items: baseline;
+  }
+  @media (max-width: 700px) { .arch .layer { grid-template-columns: 1fr; gap: 4px; } }
+  .arch .layer .lh {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  .arch .layer .ld { font-size: 16px; color: var(--ink-2); line-height: 1.55; }
+
+  /* Tables (open questions) */
+  table.q {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    border-top: 1px solid var(--line-2);
+  }
+  table.q td {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line);
+    vertical-align: baseline;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  table.q td:first-child { padding-right: 28px; color: var(--ink); }
+  table.q td:last-child {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 96px;
+    padding-top: 28px;
+    border-top: 1px solid var(--line-2);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  footer .accent { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="mark">lumen</div>
+    <div class="meta-top">Product concept · v0.3 · 2026.05.05</div>
+    <h1 class="lede">Replace the gamble<br/>with a <em>conversation.</em></h1>
+    <p class="deck">Most job searches are a coin flip — submit, wait, take whatever lands, hope it's not the wrong one. Lumen runs a different process: real conversations with the people doing the work, until you find a job you actually want, and skip the one you'd grow to hate.</p>
+    <div class="rule"></div>
+    <nav class="toc">
+      <a href="#thesis">Thesis</a>
+      <a href="#user">Who it's for</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#mvp">MVP wedge</a>
+      <a href="#walkthrough">Walkthrough</a>
+      <a href="#flow">Flow</a>
+      <a href="#arch">Architecture</a>
+      <a href="#scope">Scope</a>
+      <a href="#empty">Empty states</a>
+      <a href="#character">Character</a>
+      <a href="#moat">Why this wins</a>
+      <a href="#open">Open questions</a>
+    </nav>
+  </header>
+
+  <section id="thesis">
+    <div class="eyebrow">i. Thesis</div>
+    <h2>The CV-first system is broken.<br/><em>Especially for juniors.</em></h2>
+    <p>By the time you graduate, you haven't yet built the experience a resume is designed to evaluate. Every junior's CV looks more or less the same. So you compete by submitting more — three replies out of a hundred, one offer, and the "right" job emerges from what amounts to a coin flip.</p>
+    <p>And the test is brutal. You take the job. Months in, you realize you hate it. But you can't just quit — it would scar your resume, undermine your reputation, and the rent still has to be paid. So you stay. The two-year first-job experiment is too long, too expensive, and too consequential for a decision made on a one-page filter.</p>
+    <h3>There's another way.</h3>
+    <p>Take the time to understand the work <em>before</em> committing to it. Meet the market in conversation, not through a CV. Three things follow.</p>
+    <p>You find jobs <em>before they're posted</em>. The people you've been talking to think of you when something opens up.</p>
+    <p>You take a job <em>you actually want</em>, with conviction — because you've already met the people doing the work and know what you're signing up for.</p>
+    <p>You get <em>smarter</em> as you go. Each conversation sharpens what you're looking for, and why. The search itself becomes an education.</p>
+    <p class="muted">This is what job search should feel like. Not a hundred CVs sent into the void and a quiet descent into discouragement. A constant, iterative dialogue with the market — better insights, sharper conviction, a clearer sense of where you actually want to be.</p>
+    <p>Lumen is the tool that runs that dialogue with you. It interviews your interests, maps the market against them, finds the people worth talking to, drafts the first message in your voice, and keeps you honest on the follow-ups. You always click send.</p>
+    <p class="pull">
+      Find your job by speaking with those who did it before you. Step out of the endless CV loop.
+      <cite>— The Lumen thesis</cite>
+    </p>
+  </section>
+
+  <section id="user">
+    <div class="eyebrow">ii. Who it's for</div>
+    <h2>For juniors entering the<br/><em>Israeli</em> market for the first time.</h2>
+    <p>You don't yet have a network in the field you want — and the field has no easy way to know you yet. The CV-first system widens that gap, turning the most consequential decision of your early career into a one-page lottery.</p>
+    <p>Lumen is built to close it. To break down the barrier between you and the market, and put you in real conversation with the people already doing the work — before you commit to any of it.</p>
+    <p class="muted"><em>Scope.</em> v1 is Israel-focused. The companies and operators surfaced come from the local ecosystem — IVC, Startup Nation Central, Calcalist, GeekTime, Tel Aviv-anchored VC portfolios — not a global feed that would route you toward companies you can't realistically join. The method generalizes; the v1 product doesn't.</p>
+  </section>
+
+  <section id="capabilities">
+    <div class="eyebrow">iii. Capabilities</div>
+    <h2>What the agent does, at each stage.</h2>
+    <p>The five stages of the method are split between the agent (autonomous research and drafting) and the user (every word that goes outbound). Drafts only. The user always sends.</p>
+    <div class="matrix">
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Stage 01</span>
+          <span class="name">Interests</span>
+          <div class="auto">Autonomous</div>
+        </div>
+        <div class="stage-body">
+          <span class="what">A Mom Test-style interview — concrete questions about past behavior, never opinions or hypotheticals. Before the interview begins, the agent captures the practical constraints: where you're based (Tel Aviv, Haifa, central Israel, willing to relocate), remote versus in-office, industries you'd skip, language and salary floors, anything else the search should respect. Then it gathers five real data points (the last project that kept you up, what specifically held you in those hours, the parts you quietly couldn't stand, the class you tried and rejected, what you spend free time learning) before offering any interpretation. You can drop in a CV alongside. Only then does it propose adjacent themes and refine as you react. The loop has a stop point: it presses toward a convicted hypothesis rather than letting you drift.</span>
+          <span class="out">A working hypothesis of what you're chasing, plus a logged set of constraints — both ready to test against real people.</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Stage 02</span>
+          <span class="name">Market</span>
+          <div class="auto">Autonomous</div>
+        </div>
+        <div class="stage-body">
+          <span class="what">Research across the Israeli startup ecosystem — IVC, Startup Nation Central, Calcalist, GeekTime, local VC portfolios, X/Twitter operator threads. Filters by your stated geography and constraints, so a junior in Tel Aviv doesn't get sent at YC W22 companies in San Francisco. Clusters companies by sub-theme. Ranks by fit and signal strength. A swipe-style refinement step keeps calibrating the model as you react.</span>
+          <span class="out">A ranked, geography-filtered company list per theme, sharper with each round of swipes.</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Stage 03</span>
+          <span class="name">People &amp; questions</span>
+          <div class="auto">Autonomous</div>
+        </div>
+        <div class="stage-body">
+          <span class="what">Surfaces operators worth talking to inside target companies — team leads whose paths look like yours, decision-makers close to the work, not HR. Cross-references public footprint for warmth and angle. In parallel, builds your question list from the Stage 1 chat — what the job looks like day-to-day, how you grow into it, what to read up on at home to get current — and keeps it alive as you talk to more people and learn more. Like ideation and validation in building a startup: the question list evolves with every conversation.</span>
+          <span class="out">A shortlist per company with role, hook, and angle. A living question list you bring to every call.</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Stage 04</span>
+          <span class="name">Outreach</span>
+          <div class="auto">Drafts only</div>
+        </div>
+        <div class="stage-body">
+          <span class="what">Drafts LinkedIn messages in your voice using the Niche + Humble + Call-to-action shape. Built-in follow-up and reminder cadences once a conversation lands. Maps who you've spoken to, which fields and roles got covered, and where the gaps in your understanding still are.</span>
+          <span class="out">Edit-and-send drafts. A coverage map that tells you where to point the next conversation.</span>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Stage 05</span>
+          <span class="name">Leverage</span>
+          <div class="auto">Drafts only</div>
+        </div>
+        <div class="stage-body">
+          <span class="what">Turns each conversation into more. <em>Plays offense:</em> a brief check-in after each meeting ("how did it go? what interested you, what didn't?") turns one sentence of reflection into a sharper interest model and a better next round. Drafts the right intro asks at the right time, keeps prior contacts alive on a low-touch cadence, and surfaces the right person to ping when something relevant opens up.</span>
+          <span class="out">A model that sharpens with every meeting. Warm intros to your next contacts. A network that stays awake. Roles that reach you before they're posted.</span>
+        </div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top: 26px;"><em>On bounded iteration.</em> Each stage closes when conviction emerges, not when energy runs out. Endless exploration is its own form of avoidance — the product is designed to press you forward when you'd otherwise hide in research.</p>
+  </section>
+
+  <section id="mvp">
+    <div class="eyebrow">iv. MVP wedge</div>
+    <h2>From a chat,<br/>to your <em>first messages</em> sent.</h2>
+    <p>The MVP is a single end-to-end loop. A user arrives lost. One session later, they have a working hypothesis, a list of kept companies, real names with clickable LinkedIn URLs, drafts in their voice — and the reminders running so they don't drop the follow-ups. The lightweight CRM emerges from the loop itself, not from a separate workspace they have to set up.</p>
+    <ol class="steps">
+      <li>
+        <div>
+          <span class="step-h">A grounded chat.</span>
+          <span class="step-d">Constraints first (geography, industries off-limits, anything else the search should respect), then a Mom Test interview rooted in past behavior. Five real data points before any suggestion. Stop point: a working hypothesis you're convicted enough to test.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">Market run, refined by swipe.</span>
+          <span class="step-d">Roughly thirty Israeli companies surfaced and ranked. Swipe to keep, skip, or "tell me more" until five to ten are kept. The interest model sharpens with every gesture.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">People, surfaced.</span>
+          <span class="step-d">Inside each kept company, the agent shows named contacts where it can find them — plus search-by-role pills (Head of R&amp;D, VP Engineering, etc.) for the rest. Every name and every role is a clickable LinkedIn URL. Not just founders — team leads, decision-makers in the work, never HR.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">Drafts ready, one click to send.</span>
+          <span class="step-d">For each person, a draft message in your voice using the Niche + Humble + Call-to-action shape. Edit, copy, paste in LinkedIn, send.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">"I sent it" closes the loop.</span>
+          <span class="step-d">A button next to each draft logs the send and schedules the follow-up reminder, typically five to seven days out. When the reminder fires, you tell the agent whether they replied — and the right next move drafts itself. The lightweight CRM grows from this loop, not from a separate setup step.</span>
+        </div>
+      </li>
+    </ol>
+
+    <h3 style="margin-top:40px;">The people surface, sketched.</h3>
+    <p class="muted">For each kept company, two affordances: known people the agent could find, and search-by-role pills for the rest. Every pill opens a pre-filled LinkedIn URL — the agent does the search work, you click and connect.</p>
+    <div class="people-card">
+      <div class="people-company">AI21 Labs</div>
+      <div class="people-company-meta">Foundation models, agent infrastructure. Tel Aviv.</div>
+      <div class="people-section">
+        <div class="people-label">Known people</div>
+        <div class="people-pills">
+          <a href="#" class="pill-li">Yoav Shoham — Founder</a>
+          <a href="#" class="pill-li">Ori Goshen — Co-founder &amp; co-CEO</a>
+        </div>
+      </div>
+      <div class="people-section">
+        <div class="people-label">Search by role</div>
+        <div class="people-pills">
+          <a href="#" class="pill-li">Head of R&amp;D</a>
+          <a href="#" class="pill-li">VP Engineering</a>
+          <a href="#" class="pill-li">Voice / agent infra</a>
+          <a href="#" class="pill-li">All employees</a>
+        </div>
+      </div>
+      <a href="#" class="people-add">+ Add a person</a>
+    </div>
+
+    <h3 style="margin-top:36px;">Send and track, in one card.</h3>
+    <p class="muted">Once you've sent, the loop closes itself. The agent waits, reminds you, and drafts the follow-up if the reply doesn't come.</p>
+    <div class="track-card">
+      <div class="track-row">
+        <div class="track-name">Ori Goshen — AI21 Labs</div>
+        <div class="track-status">Sent · Apr 12</div>
+      </div>
+      <div class="track-msg">"Hi Ori — I'm a junior engineer in Tel Aviv exploring real-time agent infrastructure. I keep coming back to your team's work on Jamba and how AI21 thinks about agent systems. Would love 15 minutes to learn from your path. Could we chat in a week or two?"</div>
+      <div class="track-actions">
+        <span class="track-reminder">Reminder · Apr 17</span>
+        <div class="track-buttons">
+          <button class="btn-l">They replied</button>
+          <button class="btn-l">Draft a follow-up</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="walkthrough">
+    <div class="eyebrow">v. The first twenty minutes</div>
+    <h2>What a session feels like.</h2>
+    <div class="conversation">
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Quick scope first, then we dig in. Where are you based, and how do you think about moving for work? And — anything the search should respect: industries off-limits, language constraints, hard floors?</div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">Tel Aviv. Open to anywhere in central Israel, in-office or hybrid. Not relocating abroad. And I'd skip defense or military-adjacent companies.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Logged: central Israel, in-office or hybrid, no international relocation, no defense. Now — the actual interview. A few concrete questions before I suggest anything. I'm after past, not predictions — what you've actually done, not what you think you'd like. First: what's the last project where you stayed up later than you meant to? Doesn't need to be school or work — just something real.</div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">Last summer I built a voice assistant for my dad's hearing aid. Got really into it — kept tweaking past midnight.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Walk me through what you were actually doing in those late hours. The audio latency, the model itself, the plumbing between them? What kept you in?</div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">Mostly latency — figuring out where the delays were and shaving them down. The model itself was less interesting; it was more about plumbing.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Useful. Flip it: what part of that same project bored you, even though you pushed through it?</div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">The iOS boilerplate. Too much UI glue, not enough thinking.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Two more. A class or topic you tried because it sounded important, but quietly didn't land for you — what was it?</div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">An ML research class last spring. Hated the loop — weeks of papers before anything ran.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Last one. Outside school or work, the most recent time you spent your own free time learning something technical — what was it?</div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">A few weekends ago I went deep on how WebRTC works. Just because.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen</div>
+        <div class="said">Five concrete data points. The pattern: you're drawn to the engineering layer of real-time systems, you choose ship-side over research-side, and when you're free you self-direct toward infrastructure problems. Initial hypothesis (editable any time):
+          <ul class="listing">
+            <li>Real-time voice and agent infrastructure — primary</li>
+            <li>Agent orchestration and evaluations — adjacent</li>
+            <li>Inference latency and model serving — adjacent</li>
+          </ul>
+          Two more questions to stress-test this, then I commit and start mapping the market. Sound right?
+        </div>
+      </div>
+      <div class="turn">
+        <div class="who">User</div>
+        <div class="said">Yes.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen · two questions later</div>
+        <div class="said">Hypothesis stands. Mapping the market now — about ninety seconds.</div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen · ninety seconds later</div>
+        <div class="said">Top of the list, filtered to central Israel:
+          <ul class="listing">
+            <li>AI21 Labs — foundation models, agent infrastructure. Tel Aviv.</li>
+            <li>Hour One — generative AI for audio and video avatars. Tel Aviv.</li>
+            <li>D-ID — synthetic media, talking-head generation. Tel Aviv.</li>
+            <li>Tabnine — AI agents for code. Tel Aviv.</li>
+            <li>Run:AI — GPU orchestration, now part of NVIDIA. Tel Aviv.</li>
+          </ul>
+          A note: pure voice-agent infra is thinner here than in the US, so the list pulls in adjacent agent and AI-infrastructure plays. Switching to swipe view — your reactions will sharpen the model.
+        </div>
+      </div>
+      <div class="turn agent">
+        <div class="who">Lumen · after twelve swipes</div>
+        <div class="said">A pattern: you kept four (AI21, Hour One, Tabnine, Run:AI), skipped pure-avatar plays, and lingered on the developer-tooling side of agents. Sharpened reading: you're drawn to the infrastructure layer under AI agents — not the consumer-facing media side, not pure research. Pulling people from those four companies and seeding your question list now.</div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:24px;">From here, Stage 03 unlocks: the agent surfaces operators inside each kept company and seeds the question list from your Stage 1 chat — what the day-to-day looks like, how you'd grow into the role, what to read up on at home. The same conversation, deepening. The workspace populates in the background — themes, companies, people, pipeline — without you having to set anything up.</p>
+  </section>
+
+  <section id="flow">
+    <div class="eyebrow">vi. Flow</div>
+    <h2>What the user sees,<br/>screen by <em>screen.</em></h2>
+    <p>Two main surfaces — a chat (the default) and a dashboard (an at-a-glance view of the same state) — plus a notes panel for uploading transcripts, articles, and context that shapes what the agent suggests next. Below: a first session traced from sign-in through suggestions, with the dashboard and notes panel shown as side toggles from the same chat.</p>
+
+    <div class="flow-caption">
+      <div class="num">01</div>
+      <div class="desc">A small entrance. Email magic-link, no password. Free for first-timers.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app</div></div>
+      <div class="app-signin">
+        <div class="si-mark">lumen</div>
+        <div class="si-tag">Step out of the endless CV loop.</div>
+        <div class="si-btn">Continue with email</div>
+        <div class="si-aside">Free · Israel only, for now</div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">02</div>
+      <div class="desc">First message: scope before substance. Geography and limits captured before any interest exploration.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · onboarding</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-tabs"><div class="nav-tab active">Chat</div><div class="nav-tab">Dashboard</div></div>
+        <div class="nav-actions"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-chat">
+        <div class="turn agent">
+          <div class="who">Lumen</div>
+          <div class="said">Quick scope first. Where are you based, how do you think about moving for work, and anything the search should respect — industries off-limits, language constraints, hard floors?</div>
+        </div>
+      </div>
+      <div class="app-input">
+        <div class="field">Type a reply…</div>
+        <div class="send">↵ Send</div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">03</div>
+      <div class="desc">Mom Test discipline. Past behavior, never opinions. Five real data points before the agent offers any interpretation.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · onboarding · question 3 of 5</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-tabs"><div class="nav-tab active">Chat</div><div class="nav-tab">Dashboard</div></div>
+        <div class="nav-actions"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-chat">
+        <div class="turn">
+          <div class="who">You</div>
+          <div class="said">Mostly latency — figuring out where the delays were and shaving them down. The model itself was less interesting.</div>
+        </div>
+        <div class="turn agent">
+          <div class="who">Lumen</div>
+          <div class="said">Useful. Flip it: what part of that same project bored you, even though you pushed through it?</div>
+        </div>
+      </div>
+      <div class="app-input">
+        <div class="field">Type a reply…</div>
+        <div class="send">↵ Send</div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">04</div>
+      <div class="desc">Stop point. Hypothesis presented with explicit time-budget. Inline buttons close the loop without leaving chat.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · stop point</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-tabs"><div class="nav-tab active">Chat</div><div class="nav-tab">Dashboard</div></div>
+        <div class="nav-actions"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-chat">
+        <div class="turn agent">
+          <div class="who">Lumen</div>
+          <div class="said">Five concrete data points. Initial hypothesis (editable any time):
+            <ul class="listing">
+              <li>Real-time voice and agent infrastructure — primary</li>
+              <li>Agent orchestration and evaluations — adjacent</li>
+              <li>Inference latency and model serving — adjacent</li>
+            </ul>
+            Two more questions to stress-test, then I commit and start mapping the market. Sound right?
+            <div class="chat-actions">
+              <span class="chat-btn primary">Yes, continue</span>
+              <span class="chat-btn">Edit hypothesis</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="app-input">
+        <div class="field">Type a reply…</div>
+        <div class="send">↵ Send</div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">05</div>
+      <div class="desc">Suggestions arrive in the chat itself. The swipe deck renders inline — keep, skip, or "more" without leaving the conversation.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · market run</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-tabs"><div class="nav-tab active">Chat</div><div class="nav-tab">Dashboard</div></div>
+        <div class="nav-actions"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-chat">
+        <div class="turn agent">
+          <div class="who">Lumen · ninety seconds later</div>
+          <div class="said">Top of the list, filtered to central Israel:
+            <div class="chat-swipe-deck">
+              <div class="chat-swipe-card">
+                <div class="csc-name">AI21 Labs</div>
+                <div class="csc-d">Foundation models, agent infra. Tel Aviv.</div>
+                <div class="csc-actions thumbs"><span class="not-interested">Not interested</span><span class="interested">Interested</span></div>
+              </div>
+              <div class="chat-swipe-card">
+                <div class="csc-name">Hour One</div>
+                <div class="csc-d">Generative AI for audio/video. Tel Aviv.</div>
+                <div class="csc-actions thumbs"><span class="not-interested">Not interested</span><span class="interested">Interested</span></div>
+              </div>
+              <div class="chat-swipe-card">
+                <div class="csc-name">Tabnine</div>
+                <div class="csc-d">AI agents for code. Tel Aviv.</div>
+                <div class="csc-actions thumbs"><span class="not-interested">Not interested</span><span class="interested">Interested</span></div>
+              </div>
+              <div class="chat-swipe-card">
+                <div class="csc-name">Run:AI</div>
+                <div class="csc-d">GPU orchestration. Tel Aviv.</div>
+                <div class="csc-actions thumbs"><span class="not-interested">Not interested</span><span class="interested">Interested</span></div>
+              </div>
+            </div>
+            Mark each as interested or not. Either signal is useful.
+          </div>
+        </div>
+      </div>
+      <div class="app-input">
+        <div class="field">Type a reply…</div>
+        <div class="send">↵ Send</div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓ next session</div>
+
+    <h3 style="margin-top:56px;">Session two onward — the <em>working mode.</em></h3>
+    <p>The first session is the wow. The recurring relationship is the value — and it lives here. From session two on, the layout shifts: the dashboard becomes the canvas, with the chat as a co-pilot on the right. One screen, two panes. The dashboard's centerpiece is your <em>open questions</em> about the work, the people you're talking to, the hypothesis you're testing. The chat helps you maintain it.</p>
+
+    <div class="flow-caption">
+      <div class="num">06</div>
+      <div class="desc">Working mode. Dashboard on the left, co-pilot on the right. Hypothesis at the top, open questions in the center, in-flight conversations below. The chat picks up where it left off — proactive when there's a meeting to reflect on, quiet when there isn't.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · working mode</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-actions" style="margin-left: auto;"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-split">
+        <div class="app-split-left">
+          <div class="dash-section">
+            <div class="ds-h">Hypothesis</div>
+            <div class="dash-hypo">Real-time voice &amp; agent infrastructure <span class="hypo-tag">PRIMARY</span></div>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">Open questions <em>(5)</em></div>
+            <ul class="dash-questions">
+              <li class="open">What does day-to-day look like for a junior at AI21?</li>
+              <li class="partial">How does junior growth work in early-stage agent infra?</li>
+              <li class="open">Is there demand for engineers with my background in voice infra?</li>
+              <li class="answered">What should I read on agent orchestration?</li>
+              <li class="open">Who at LiveKit might be open to a 15-minute chat?</li>
+            </ul>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">In flight <em>(3)</em></div>
+            <ul class="dash-pipeline">
+              <li><span>Lior Hakim · Hour One</span> <em>reflect →</em></li>
+              <li><span>Ori Goshen · AI21</span> <em>reminder Apr 17</em></li>
+              <li><span>Yoav Shoham · AI21</span> <em>follow up Apr 19</em></li>
+            </ul>
+          </div>
+        </div>
+        <div class="app-split-right">
+          <div class="split-chat-header"><span>Co-pilot</span></div>
+          <div class="split-chat">
+            <div class="turn agent">
+              <div class="who">Lumen</div>
+              <div class="said">Welcome back. Lior's call was yesterday — want to start there, or somewhere else? You can also click any open question and we'll work through it together.</div>
+            </div>
+          </div>
+          <div class="split-input">
+            <div class="field">Reply…</div>
+            <div class="send">↵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">→ notes panel</div>
+
+    <div class="flow-caption">
+      <div class="num">07</div>
+      <div class="desc">Notes panel. Same layout, dashboard area swaps for the notes drawer. Drop in transcripts, voice memos, articles, CV updates. Each one feeds back into the open questions and refines the next round of suggestions.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · notes</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-actions" style="margin-left: auto;"><span style="color:var(--accent);">Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-split">
+        <div class="app-split-left">
+          <div class="notes-drop">
+            <div class="hint">Drop a file or paste text</div>
+            Voice memos, call notes, articles you found compelling, CV updates. The agent reads and updates your preferences.
+          </div>
+          <div class="notes-list">
+            <div class="note-row">
+              <span>Call with Lior Hakim — Hour One</span>
+              <span class="when">Apr 14</span>
+            </div>
+            <div class="note-row">
+              <span>Article: "Agent infra in 2026"</span>
+              <span class="when">Apr 12</span>
+            </div>
+            <div class="note-row">
+              <span>cv.pdf</span>
+              <span class="when">Apr 10</span>
+            </div>
+          </div>
+        </div>
+        <div class="app-split-right">
+          <div class="split-chat-header"><span>Co-pilot</span></div>
+          <div class="split-chat">
+            <div class="turn agent">
+              <div class="who">Lumen</div>
+              <div class="said">Drop anything in. I'll pull out themes that update your hypothesis or your open questions, then we can talk through what's worth surfacing.</div>
+            </div>
+          </div>
+          <div class="split-input">
+            <div class="field">Or just type…</div>
+            <div class="send">↵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">08</div>
+      <div class="desc">The morning after. The co-pilot plays offense — a proactive check-in surfaces in the chat panel. One sentence is all it asks for. (v1: manual trigger from "Sent" or "Replied" actions. v2: calendar-aware.)</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · check-in</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-actions" style="margin-left: auto;"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-split">
+        <div class="app-split-left">
+          <div class="dash-section">
+            <div class="ds-h">Hypothesis</div>
+            <div class="dash-hypo">Real-time voice &amp; agent infrastructure <span class="hypo-tag">PRIMARY</span></div>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">Open questions <em>(5)</em></div>
+            <ul class="dash-questions">
+              <li class="open">What does day-to-day look like for a junior at AI21?</li>
+              <li class="partial">How does junior growth work in early-stage agent infra?</li>
+              <li class="open">Is there demand for engineers with my background in voice infra?</li>
+              <li class="answered">What should I read on agent orchestration?</li>
+              <li class="open">Who at LiveKit might be open to a 15-minute chat?</li>
+            </ul>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">In flight <em>(3)</em></div>
+            <ul class="dash-pipeline">
+              <li><span>Lior Hakim · Hour One</span> <em>reflect →</em></li>
+              <li><span>Ori Goshen · AI21</span> <em>reminder Apr 17</em></li>
+              <li><span>Yoav Shoham · AI21</span> <em>follow up Apr 19</em></li>
+            </ul>
+          </div>
+        </div>
+        <div class="app-split-right">
+          <div class="split-chat-header"><span>Co-pilot</span><span class="new-msg">Apr 15</span></div>
+          <div class="split-chat">
+            <div class="turn agent">
+              <div class="who">Lumen</div>
+              <div class="said">Yesterday's call with Lior Hakim from Hour One — how did it go? A quick sentence: what interested you, what didn't, what you didn't expect. Shorter the better.</div>
+            </div>
+          </div>
+          <div class="split-input">
+            <div class="field">Reply…</div>
+            <div class="send">↵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">09</div>
+      <div class="desc">The reflection. The user gives one sentence; the dashboard updates in real time as the agent names the pattern. A new question gets added; the hypothesis shifts. The reflection is the interface where the model learns.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · reflection</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-actions" style="margin-left: auto;"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-split">
+        <div class="app-split-left">
+          <div class="dash-section">
+            <div class="ds-h">Hypothesis <em>updating</em></div>
+            <div class="dash-hypo">Real-time voice &amp; agent infrastructure <span class="hypo-tag">PRIMARY</span><br/>+ AgTech operations <span class="hypo-tag">ADJACENT</span></div>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">Open questions <em>(6)</em></div>
+            <ul class="dash-questions">
+              <li class="open">What does day-to-day look like for a junior at AI21?</li>
+              <li class="partial">How does junior growth work in early-stage agent infra?</li>
+              <li class="answered">What should I read on agent orchestration?</li>
+              <li class="open">Who at LiveKit might be open to a 15-minute chat?</li>
+              <li class="open added">What does AgTech ops look like day-to-day?</li>
+            </ul>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">In flight <em>(3)</em></div>
+            <ul class="dash-pipeline">
+              <li class="muted"><span>Lior Hakim · Hour One</span> <em>reflected ✓</em></li>
+              <li><span>Ori Goshen · AI21</span> <em>reminder Apr 17</em></li>
+              <li><span>Yoav Shoham · AI21</span> <em>follow up Apr 19</em></li>
+            </ul>
+          </div>
+        </div>
+        <div class="app-split-right">
+          <div class="split-chat-header"><span>Co-pilot</span></div>
+          <div class="split-chat">
+            <div class="turn">
+              <div class="who">You</div>
+              <div class="said">Lior was great. Didn't think AgTech would interest me, but the mid-stage ops side hooked me. Pure-research side felt slow.</div>
+            </div>
+            <div class="turn agent">
+              <div class="who">Lumen</div>
+              <div class="said">Useful pattern. Two updates:
+                <ul class="listing">
+                  <li>AgTech ops → adjacent</li>
+                  <li>Pure research → deprioritized</li>
+                </ul>
+                Three new IL companies fit. See them now, or save?
+                <div class="chat-actions">
+                  <span class="chat-btn primary">See them</span>
+                  <span class="chat-btn">Save</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="split-input">
+            <div class="field">Reply…</div>
+            <div class="send">↵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+
+    <div class="flow-caption">
+      <div class="num">10</div>
+      <div class="desc">A sharper next round. New companies surface in the co-pilot panel; the dashboard reflects the updated hypothesis and the new open questions. Same layout, evolving content. The loop continues — quietly, without the user moving screens.</div>
+    </div>
+    <div class="flow-frame">
+      <div class="flow-chrome"><div class="dots"><span></span><span></span><span></span></div><div class="label">lumen.app · sharper round</div></div>
+      <div class="app-nav">
+        <div class="app-mark">lumen</div>
+        <div class="nav-actions" style="margin-left: auto;"><span>Notes</span><span>Settings</span></div>
+      </div>
+      <div class="app-split">
+        <div class="app-split-left">
+          <div class="dash-section">
+            <div class="ds-h">Hypothesis</div>
+            <div class="dash-hypo">Real-time voice &amp; agent infrastructure <span class="hypo-tag">PRIMARY</span><br/>AgTech operations <span class="hypo-tag">ADJACENT</span></div>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">Open questions <em>(8)</em></div>
+            <ul class="dash-questions">
+              <li class="open">What does day-to-day look like for a junior at AI21?</li>
+              <li class="partial">How does junior growth work in early-stage agent infra?</li>
+              <li class="open">Who at LiveKit might be open to a 15-minute chat?</li>
+              <li class="open added">What does AgTech ops look like day-to-day?</li>
+              <li class="open added">Who at Taranis or Tevel runs the ops side?</li>
+            </ul>
+          </div>
+          <div class="dash-section">
+            <div class="ds-h">In flight <em>(3)</em></div>
+            <ul class="dash-pipeline">
+              <li><span>Ori Goshen · AI21</span> <em>reminder Apr 17</em></li>
+              <li><span>Yoav Shoham · AI21</span> <em>follow up Apr 19</em></li>
+            </ul>
+          </div>
+        </div>
+        <div class="app-split-right">
+          <div class="split-chat-header"><span>Co-pilot</span></div>
+          <div class="split-chat">
+            <div class="turn agent">
+              <div class="who">Lumen</div>
+              <div class="said">Three for the AgTech-ops angle:
+                <div class="split-card-deck">
+                  <div class="chat-swipe-card">
+                    <div class="csc-name">Taranis</div>
+                    <div class="csc-d">Crop intelligence ops. Tel Aviv.</div>
+                    <div class="csc-actions thumbs"><span class="not-interested">Not for me</span><span class="interested">Interested</span></div>
+                  </div>
+                  <div class="chat-swipe-card">
+                    <div class="csc-name">Prospera</div>
+                    <div class="csc-d">CV for greenhouses. Tel Aviv.</div>
+                    <div class="csc-actions thumbs"><span class="not-interested">Not for me</span><span class="interested">Interested</span></div>
+                  </div>
+                  <div class="chat-swipe-card">
+                    <div class="csc-name">Tevel Aerobotics</div>
+                    <div class="csc-d">Autonomous drone fleets for orchards. Tel Aviv.</div>
+                    <div class="csc-actions thumbs"><span class="not-interested">Not for me</span><span class="interested">Interested</span></div>
+                  </div>
+                </div>
+                Want me to surface people inside any of them?
+              </div>
+            </div>
+          </div>
+          <div class="split-input">
+            <div class="field">Reply…</div>
+            <div class="send">↵</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="arch">
+    <div class="eyebrow">vii. Architecture</div>
+    <h2>The shape of the system.</h2>
+    <div class="arch">
+      <div class="layer">
+        <div class="lh">Surface</div>
+        <div class="ld">Chat as the front door. A workspace for themes, companies, people, and pipeline. A swipe view for refinement.</div>
+      </div>
+      <div class="layer">
+        <div class="lh">Agents</div>
+        <div class="ld">A coach (interest interview, drift detection). A researcher (market and people mapping). A writer (drafts in your voice). A watcher (triggers and cadence).</div>
+      </div>
+      <div class="layer">
+        <div class="lh">Memory</div>
+        <div class="ld">User profile — interests, voice samples, ruled-outs. A company database. A people database. Conversation logs. Pipeline state. Swipe signal history.</div>
+      </div>
+      <div class="layer">
+        <div class="lh">Inputs</div>
+        <div class="ld">A LinkedIn browser extension. Manual paste with AI enrichment. Web search and public databases.</div>
+      </div>
+      <div class="layer">
+        <div class="lh">Outputs</div>
+        <div class="ld">Drafts to clipboard or LinkedIn DM compose. A daily standup digest. Trigger-based nudges.</div>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:18px;"><em>Constraint:</em> nothing sends without a human click. Trust-safe and ToS-safe by design.</p>
+  </section>
+
+  <section id="scope">
+    <div class="eyebrow">viii. Scope</div>
+    <h2>What Lumen <em>is,</em><br/>and what's in v1.</h2>
+    <p>Lumen is your networking advisor — focused on how to get a significant footing in the job market and build real relationships. Not about submitting CVs. About how you get in the room with the CEO or the CTO of a company outside the CV funnel.</p>
+    <p>It's a conversation board, almost like a job-seeking CRM. The optimization target is <em>people and what interests you,</em> not jobs that happen to be posted. Free for now.</p>
+    <div class="col-2">
+      <div class="block">
+        <div class="label">In v1</div>
+        <p>Israel-only — Tel Aviv ecosystem first. Free. Onboarding chat with constraint capture and Mom Test interview. Market mapping against the local ecosystem. Tinder-style company swipe refinement. People shortlist via LinkedIn extension and manual paste. Pre-meeting question lists tied to your hypothesis. Outreach drafts using Niche + Humble + Call-to-action. Pipeline workspace. Conversation spine notes capture. 24-hour, 30-day, and 90-day follow-up reminders. Offensive check-ins after each meeting (manually triggered from sent/met actions) feeding a reflection-to-refinement loop that sharpens the model. A daily standup digest. A CV alignment check.</p>
+      </div>
+      <div class="block">
+        <div class="label">Not v1</div>
+        <p>A job board. A full CV builder — alignment check only for now. Interview preparation or mock interviews. Salary negotiation. Paid coaching. Emotional-support chatbot. Other geographic markets — NYC, EU, anywhere outside Israel. Autonomous send on any channel. Gmail integration (LinkedIn-first). Calendar integration for automatic meeting detection. Automatic ingestion of LinkedIn message replies. Group, team, or enterprise features. A mobile app — web-first.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="empty">
+    <div class="eyebrow">ix. Empty states</div>
+    <h2>What the agent does when<br/>the data <em>isn't there.</em></h2>
+    <p>The thread connecting all of these: the agent is honest about what it doesn't know and what isn't there. A junior who's been ghosted by a hundred CVs has trained themselves to distrust upbeat tools. Lumen earns trust by being the rare tool that says "this isn't there" out loud.</p>
+    <div class="matrix">
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Case A</span>
+          <span class="name">Thin market</span>
+        </div>
+        <div class="stage-body">
+          The agent finds three to five strong-fit companies instead of thirty. It doesn't pad with weak fits. <em>"Three companies fit closely. Two ways forward — broaden the angle by one step (your adjacent themes), or talk to these three first and see what they teach you."</em>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Case B</span>
+          <span class="name">No IL depth</span>
+        </div>
+        <div class="stage-body">
+          The hypothesis genuinely doesn't have meaningful Israeli plays. The agent names it and offers three honest options: broaden to adjacent themes, accept that this means looking at remote-friendly international companies, or rethink the angle.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Case C</span>
+          <span class="name">No named operators</span>
+        </div>
+        <div class="stage-body">
+          The agent leans on the search-by-role pills. <em>"I couldn't find specific names for this one. Try a role-search instead, or paste a name you find on LinkedIn — I'll learn from it."</em> Honest about its limits, gives a manual path forward.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Case D</span>
+          <span class="name">Returned after a break</span>
+        </div>
+        <div class="stage-body">
+          The user abandoned mid-onboarding and comes back five days later. The agent doesn't restart. <em>"You were three questions in last time. Same context, or has anything shifted?"</em> Resumes where they left off, with a calibration moment built in.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Case E</span>
+          <span class="name">No replies</span>
+        </div>
+        <div class="stage-body">
+          Multiple "no reply" reports in a row. The agent surfaces a diagnostic. <em>"None of the last five turned into conversations. Three things usually explain it — timing, angle, or low warmth. Want to look at the messages together?"</em> Treats silence as data, not failure.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Case F</span>
+          <span class="name">Off-topic</span>
+        </div>
+        <div class="stage-body">
+          The user asks something unrelated. The agent doesn't pretend to be a general chatbot. <em>"I'm scoped to the networking work. Happy to come back to that whenever."</em> Friendly but bounded — protects the editorial register and the agent's role.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="character">
+    <div class="eyebrow">x. The agent's character</div>
+    <h2>A considered<br/><em>networking advisor.</em></h2>
+    <p>Not a coach (too directive), not an assistant (too subservient), not a peer (too horizontal). An advisor — someone who knows the territory, offers options instead of orders, and respects that the user is the one deciding.</p>
+    <div class="matrix">
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Trait 01</span>
+          <span class="name">Honest before helpful</span>
+        </div>
+        <div class="stage-body">
+          When the agent doesn't know something, it says so. When the market is thin, it says so. When the user's hypothesis has weak IL depth, it surfaces the honest no — and offers options, not consolation.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Trait 02</span>
+          <span class="name">Patient, not passive</span>
+        </div>
+        <div class="stage-body">
+          Waits while the user reflects after a meeting. Doesn't push new suggestions when the user is processing — "save for tomorrow" is a real choice. But it also doesn't let the user drift: bounded iteration means it presses toward conviction at the right moments.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Trait 03</span>
+          <span class="name">Reflective, not declarative</span>
+        </div>
+        <div class="stage-body">
+          Surfaces patterns ("you keep choosing infrastructure over consumer-facing work") rather than dictating identity ("you're an infrastructure person"). The user makes the call. The agent gives them the data.
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Trait 04</span>
+          <span class="name">Names contradictions</span>
+        </div>
+        <div class="stage-body">
+          When today's reflection contradicts yesterday's hypothesis, the agent says so cleanly and treats it as signal, not failure. <em>"Earlier you ruled out research; this last call had a research thread you liked. Updating, or holding both for now?"</em>
+        </div>
+      </div>
+      <div class="row">
+        <div class="stage-label">
+          <span class="num">Trait 05</span>
+          <span class="name">Bounded scope, no apology</span>
+        </div>
+        <div class="stage-body">
+          Stays inside the work. Doesn't pretend to be a general assistant. Doesn't try to be charming when charm isn't useful. Doesn't soften clarity to be liked.
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin-top:40px;">What the agent never does.</h3>
+    <p class="muted" style="margin-top:6px; font-size:14.5px;">A short list of explicit anti-patterns. The system prompt should enforce these.</p>
+    <ul class="never-list">
+      <li>Over-affirms — <em>"great question!", "amazing!", "you're crushing it!"</em></li>
+      <li>Asks future-oriented questions — <em>"would you like…", "do you think you'd…"</em></li>
+      <li>Pretends to know what it doesn't.</li>
+      <li>Pushes when the user is reflecting or has just landed a meeting.</li>
+      <li>Gamifies the work — no streaks, no points, no rewards.</li>
+      <li>Apologizes for being a tool — no <em>"sorry, I'm just an AI."</em></li>
+    </ul>
+  </section>
+
+  <section id="moat">
+    <div class="eyebrow">xi. Why this wins</div>
+    <h2>The unowned upstream.</h2>
+    <p>The market is full of job-application trackers and AI-resume tools. None attack the harder problem upstream of all of them: <em>the user doesn't know what they want.</em> Three structural advantages:</p>
+    <ol class="steps">
+      <li>
+        <div>
+          <span class="step-h">An unowned wedge.</span>
+          <span class="step-d">"Help me figure out what I want" is hard, fuzzy, and conversational — which is why no incumbent owns it. Large language models make it tractable for the first time.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">Method with mileage.</span>
+          <span class="step-d">The five-stage approach has been refined through years of helping people figure out what they want — the questions, the cadences, the conversation scaffolding. The product encodes what's already known to work.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">A data flywheel.</span>
+          <span class="step-d">Every swipe and conversation refines the user's interest model. Across users, anonymous signal sharpens the market model. The map gets sharper as more people walk it.</span>
+        </div>
+      </li>
+      <li>
+        <div>
+          <span class="step-h">Inverted incentives.</span>
+          <span class="step-d">Job boards optimize for application volume. Lumen optimizes for fewer, better-fit conversations. A different metric and, therefore, a different product.</span>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <section id="open">
+    <div class="eyebrow">xii. Open questions</div>
+    <h2>What we still need to decide.</h2>
+    <table class="q">
+      <tr><td>LinkedIn extension architecture — DOM scrape or official, limited API?</td><td>Before any code</td></tr>
+      <tr><td>How does the agent learn the user's voice for outreach drafts? Sample messages, recorded calls, or profile-based?</td><td>Spec phase</td></tr>
+      <tr><td>How much of the post-call note is auto-extracted from a recording, and how much is user-typed?</td><td>Spec phase</td></tr>
+      <tr><td>Pricing — free for the first cohort, then a self-serve plan that mirrors the coaching service?</td><td>Pre-launch</td></tr>
+      <tr><td>Branding and naming — Lumen, or something else?</td><td>Before launch</td></tr>
+      <tr><td>Geographic expansion — when does the product extend beyond Israel, and which market is next (NYC, London, Berlin)?</td><td>Post v1 traction</td></tr>
+    </table>
+  </section>
+
+  <footer>
+    <span class="accent">Lumen — Product Concept v0.3</span>
+    <span>Companion: The Method · Playbook</span>
+    <span>2026.05.05</span>
+  </footer>
+
+</div>
+</body>
+</html>
