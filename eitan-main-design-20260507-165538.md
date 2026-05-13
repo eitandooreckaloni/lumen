@@ -39,6 +39,19 @@ hold them through the whole process.
   (spike in Sprint 0); copy-button modal is the default.
 - Friendly and fun tone; the product is personal, not enterprise
 
+## Design Principle: Lumen Leads
+
+At every stage, Lumen makes the next move. The user's job is to respond and provide information — not to decide what happens next.
+
+| Reactive (old) | Lumen Leads (new) |
+|---|---|
+| User fills form → Lumen responds | Lumen proposes → User confirms/provides |
+| Stage transitions triggered by user buttons | Stage transitions initiated by Lumen |
+| Generic spinners and loading states | Lumen's voice present at every wait |
+| User decides who to target | Lumen decides, user approves |
+
+The user is passive and information-rich. Lumen is active and direction-setting. Every loading state, every transition, every prompt should feel like Lumen is pulling the user forward — not waiting for them.
+
 ## Premises
 
 1. The core job is "keep me off the CV treadmill and on the networking track."
@@ -65,19 +78,30 @@ hold them through the whole process.
 
 - **Stage 1: Mom Test Interview** — Constraint capture + 5 behavioral questions
   + hypothesis synthesis. Fallback path for thin profiles (vicarious experience mode).
+  **Transition:** When CONFIRMED fires, Lumen says "Got it. Let me map your market."
+  before the loading state. Loading state uses Lumen's voice, not a generic spinner.
 - **Stage 2: Market Mapping** — Claude-powered Israeli company suggestions, filtered
   by constraints. User swipes to keep/skip. Seeded with static JSON for reliability.
-- **Stage 3: People Search** — No extension, no API. Lumen constructs a LinkedIn
-  people search URL from name + company (e.g., `linkedin.com/search/results/people/
-  ?keywords=Ori+Goshen+AI21+Labs`). User clicks the chip, LinkedIn search opens in
-  a new tab — they're already logged in, results appear immediately.
-  **LinkedIn result hint:** Displayed beneath the chip before the user clicks:
-  Claude generates a one-line tip from the user's hypothesis + company data, e.g.
-  "Look for someone with 2+ years at {company} who posts about {domain from hypothesis}."
-  Helps junior devs identify the right person from noisy search results.
-  User picks the right person, pastes their profile URL back into Lumen. Lumen stores
-  the contact and generates a hook (1–2 sentences: why this person is worth reaching
-  out to given the user's hypothesis, and the angle to use in the message).
+  **Transition:** After the last card is swiped and ≥1 company is kept, Lumen
+  immediately says "You're most aligned with [first kept company]. Let's find someone
+  to talk to there." No button. Auto-transitions to Stage 3 after 800ms. The user
+  never has to decide "ok now what." If zero kept: same empty state as before.
+- **Stage 3: People Search** — Lumen-led, three steps only. No form.
+  **Step 1 — Lumen picks and describes:** Lumen auto-selects the current target
+  company from the kept queue. It generates a "who to look for" description from the
+  hypothesis: seniority, function, what to look for in results, who to avoid.
+  e.g., "At [Company], look for a backend or infra engineer, 2–4 years in. Someone
+  who posts about [domain]. Avoid recruiters and HR titles."
+  **Step 2 — One-tap LinkedIn search:** A single chip: "Search [Company] on LinkedIn →"
+  URL is constructed from company + hypothesis-derived keywords (broader than just
+  `name+company` — Lumen picks the right search terms). User clicks, finds someone,
+  comes back.
+  **Step 3 — Paste URL, Lumen takes over:** Two inputs only: Name and LinkedIn URL.
+  No role field (inferred in Stage 4). When the user pastes a LinkedIn URL, Lumen
+  auto-generates the hook immediately — no "Generate hook →" button. Once hook
+  streams, Lumen auto-generates the draft and transitions to Stage 4. No
+  "Draft the message →" button.
+  Total user actions in Stage 3: tap search chip, type name, paste URL. That's it.
 - **Stage 4: Draft Generation** — Lumen drafts the outreach message in the user's
   voice using **Niche + Humble + CTA** shape (concrete definition):
   - **Niche:** One specific reason this person is relevant to the user's hypothesis —
@@ -93,11 +117,17 @@ hold them through the whole process.
   - **Total draft length:** 3 sentences maximum. If the user says the draft doesn't
     sound like them, the agent prompts for one clarifying example and regenerates once.
     No multi-turn correction loop in v1.
-- **Stage 5: Send + Reminder Loop** — One-click LinkedIn compose pre-fill (or copy
-  modal fallback). "I sent it" logs the send and schedules a follow-up reminder email
-  (5–7 days). Post-meeting reflection: agent asks 2 questions ("what interested you,
-  what didn't?") and updates the hypothesis + open questions accordingly. Reflection
-  flow is v1-minimal — no structured UI, just a short chat exchange.
+- **Stage 4: Draft** — Same as before (editable textarea, Copy + "I sent it"). After
+  "I sent it", Lumen says "Nice. Who's next?" and immediately surfaces the next
+  uncontacted company from the kept queue — looping back into Stage 3.
+  If all kept companies have been worked through, Lumen says "You've reached out to
+  someone at every company you flagged. Want to add more?" → "Add more companies"
+  re-runs Stage 2 with the existing hypothesis.
+- **Stage 5: Pipeline loop, not a dead-end.** Stage 5 is retired as a full-page
+  screen. "I sent it" triggers a brief inline confirmation (toast/animation), then
+  Lumen immediately moves to the next company. The user never lands on a dead-end.
+  Logging the send and scheduling the 5-day reminder email still happens on "I sent it"
+  — that backend work is unchanged.
   **No-reply flow:** When the reminder fires and the user logs "no reply after 1 week,"
   Lumen shows: "No reply is normal — most people don't respond to first messages.
   Try one more? Or move on to a new contact?" Two options: "Draft a follow-up"
@@ -220,17 +250,21 @@ founded after 2023. Mitigation for v1:
 
 ```
 User         id, email, created_at
-Interview    id, user_id, constraints (JSON), questions_answers (JSON), hypothesis (text), created_at
-Contact      id, user_id, name, linkedin_url, company, role, hook (text), status (enum: drafted/sent/replied/no_reply)
+Interview    id, user_id, constraints (JSON), questions_answers (JSON), hypothesis (text),
+             kept_companies (JSON array), created_at
+Contact      id, user_id, name, linkedin_url, company, hook (text), status (enum: drafted/sent/replied/no_reply)
 Message      id, contact_id, draft_text, sent_at, type (enum: initial/follow_up)
 Reminder     id, contact_id, scheduled_at, type (enum: follow_up), fired_at
 ```
-Note: `Note` table deferred to v2 (paste/voice_memo notes feature not in v1 scope).
-`Contact.draft` removed — working draft is always a `Message` record.
-`Contact.status` reflects the latest `Message` outcome, not a direct field — query
-for the most recent Message record to determine effective status.
-v1 supports multiple messages per contact: `Message.type = initial` for the first
-outreach, `Message.type = follow_up` for subsequent messages.
+Note: `Contact.role` removed — role is no longer collected as a discrete field (inferred in hook/draft
+generation from LinkedIn URL context). `Note` table deferred to v2. `Contact.draft` removed —
+working draft is always a `Message` record. `Contact.status` reflects the latest `Message`
+outcome, not a direct field. v1 supports multiple messages per contact.
+
+**Contact queue (UI state, v1):** `keptCompanies` is an ordered pipeline. After each "I sent it",
+the app picks the first company in `keptCompanies` that has no `Contact` with `status != drafted`.
+This is tracked in React state in v1; can persist to `Interview.kept_companies` if needed across
+sessions.
 
 ## Technical Architecture
 
