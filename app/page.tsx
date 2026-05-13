@@ -431,7 +431,7 @@ function CompanyCard({
           <textarea
             value={freeText}
             onChange={(e) => setFreeText(e.target.value)}
-            placeholder={showChips ? "Anything specific? (optional)" : "Tell me why — what felt off?"}
+            placeholder={showChips ? "Anything specific? (optional)" : pendingDecision === "keep" ? "Tell me what made it stand out..." : "Tell me why — what felt off?"}
             rows={2}
             style={{
               width: "100%", border: "1px solid var(--line)", borderRadius: 8,
@@ -861,6 +861,7 @@ export default function Home() {
                     onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleS1Submit(); } }}
                     placeholder="What's on your mind about the search?"
                     rows={2}
+                    suppressHydrationWarning
                     style={{ flex: 1, border: "none", background: "transparent", fontFamily: "var(--serif)", fontSize: 15, color: "var(--ink)", resize: "none", lineHeight: 1.5 }}
                   />
                   <button
