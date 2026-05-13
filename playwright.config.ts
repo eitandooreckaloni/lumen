@@ -7,12 +7,12 @@ export default defineConfig({
   expect: { timeout: 8_000 },
   reporter: "list",
   use: {
-    baseURL: "http://localhost:3001",
+    baseURL: "http://localhost:3000",
     trace: "on-first-retry",
   },
   webServer: {
     command: "npm run dev",
-    url: "http://localhost:3001",
+    url: "http://localhost:3000",
     reuseExistingServer: true,
     timeout: 60_000,
   },
