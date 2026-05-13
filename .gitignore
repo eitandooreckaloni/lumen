@@ -42,3 +42,4 @@ logs/
 # Misc
 .cache/
 *.tmp
+.gstack/
