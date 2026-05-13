@@ -17,11 +17,19 @@ interface Company {
   description: string;
   domain: string;
   why_fit: string;
+  website?: string;
+  size?: string;
 }
 
 interface KeptCompany {
   company: Company;
   reason: string;
+}
+
+interface SkippedCompany {
+  company: Company;
+  reasons: string[];
+  freeText: string;
 }
 
 interface SuggestedPerson {
@@ -50,12 +58,24 @@ Rules:
 - No follow-up questions, no tangents.
 - After the 5th answer is given, synthesize a hypothesis.
 
-The 5 questions in order:
-1. "Tell me about a project or piece of work that kept you up past midnight. Could be school, personal, anything."
-2. "What were you actually doing when you lost track of time? What was the specific task?"
-3. "What kind of work bores you or drains you? Be honest — there are no wrong answers."
-4. "Tell me about a class or learning experience that didn't land for you. What was missing?"
-5. "What have you been learning or building in your free time, if anything?"
+Start with this question:
+1. "What's something you've worked on or learned about lately that really interests you — a topic, a problem, something you keep coming back to?"
+
+After they answer Q1, read their response to detect experience level:
+- If they mention specific projects, work, internships, or concrete technical work → use the **experienced path**
+- If they mention topics, interests, things they've been reading, or have no clear projects → use the **junior/exploring path**
+
+**Experienced path** (Q2–Q5):
+2. "When you're deep in that kind of work, what does it actually look like? What are you doing?"
+3. "What kind of work or tasks do you find yourself avoiding, even when you know you should do them?"
+4. "Tell me about a project or experience where something clicked — what made it work?"
+5. "What have you been working on or learning on your own time?"
+
+**Junior/exploring path** (Q2–Q5):
+2. "When you're in that mode — learning, reading, exploring — what does it actually look like?"
+3. "What kind of topics or activities feel draining or boring to you, even when you try?"
+4. "Tell me about something you learned that really clicked for you. What made it stick?"
+5. "How do you spend your time when there's no assignment or deadline driving you?"
 
 After the user answers the 5th question, write the hypothesis using this EXACT format:
 
@@ -71,14 +91,30 @@ CONFIRMED ✓
 Tone: direct, warm, like a sharp friend — not corporate, not a therapist.
 If asked about anything outside job search and networking, respond: "I'm scoped to the networking work. Happy to come back to that whenever."`;
 
-const getStage2System = (hypothesis: string, previousCompanies: string[] = []) => {
-  const previousSection = previousCompanies.length > 0
-    ? `\nPreviously shown companies: ${previousCompanies.join(", ")}.\nPrioritize NEW companies not on this list. Only re-suggest one if there is a meaningfully different reason given the updated context — if so, add a note in why_fit explaining why it still belongs.\n`
-    : "";
+const getStage2System = (
+  hypothesis: string,
+  previousCompanies: string[] = [],
+  skipped: SkippedCompany[] = []
+) => {
+  const previousSection =
+    previousCompanies.length > 0
+      ? `\nPreviously shown companies: ${previousCompanies.join(", ")}.\nPrioritize NEW companies not on this list. Only re-suggest one if there is a meaningfully different reason given the updated context — if so, add a note in why_fit explaining why it still belongs.\n`
+      : "";
+
+  const skippedSection =
+    skipped.length > 0
+      ? `\nThe user passed on these companies. Use their feedback to suggest BETTER-FITTING alternatives:\n${skipped
+          .map((s) => {
+            const reasons = [...s.reasons, s.freeText].filter(Boolean).join(", ");
+            return `- ${s.company.name}: ${reasons || "not a fit"}`;
+          })
+          .join("\n")}\n`
+      : "";
+
   return `You are Lumen. Based on this hypothesis, suggest 5 Israeli tech companies that would be a strong fit.
 
 Hypothesis: ${hypothesis}
-${previousSection}
+${previousSection}${skippedSection}
 Return ONLY a valid JSON array — no other text, no markdown code fences:
 [
   {
@@ -86,11 +122,13 @@ Return ONLY a valid JSON array — no other text, no markdown code fences:
     "stage": "Series B",
     "description": "one sentence: what they do",
     "domain": "AI/ML",
-    "why_fit": "one specific sentence: why this fits the hypothesis — not generic"
+    "why_fit": "one specific sentence: why this fits the hypothesis — not generic",
+    "website": "company.com",
+    "size": "50–200 employees"
   }
 ]
 
-Only suggest Israeli companies. Mix of sizes (seed to post-IPO). Be specific in why_fit.`;
+Only suggest Israeli companies. Mix of sizes (seed to post-IPO). Be specific in why_fit. Always include website and size.`;
 };
 
 const getStage3PeopleSystem = (hypothesis: string, company: string, keepReason: string) =>
@@ -269,7 +307,7 @@ function LinkedInIcon() {
 // ─── Company card ─────────────────────────────────────────────────────────────
 
 function CompanyCard({
-  company, onKeep, onSkip, current, total, pendingDecision, onFeedback,
+  company, onKeep, onSkip, current, total, pendingDecision, onFeedback, totalReviewed,
 }: {
   company: Company;
   onKeep: () => void;
@@ -277,10 +315,25 @@ function CompanyCard({
   current: number;
   total: number;
   pendingDecision: "keep" | "skip" | null;
-  onFeedback: (reason: string) => void;
+  onFeedback: (reasons: string[], freeText: string) => void;
+  totalReviewed: number;
 }) {
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [freeText, setFreeText] = useState("");
+
   const keepReasons = ["Strong product fit", "Interesting tech", "Fast growing", "Right culture"];
   const skipReasons = ["Wrong domain", "Too large", "Too early/late", "Not interesting"];
+  const showChips = totalReviewed >= 5;
+  const canSubmit = selectedReasons.length > 0 || freeText.trim().length > 0;
+
+  const toggleReason = (reason: string) =>
+    setSelectedReasons((prev) =>
+      prev.includes(reason) ? prev.filter((r) => r !== reason) : [...prev, reason]
+    );
+
+  const websiteHref = company.website
+    ? company.website.startsWith("http") ? company.website : `https://${company.website}`
+    : null;
 
   return (
     <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 16, padding: 28, maxWidth: 480, margin: "0 auto" }}>
@@ -302,9 +355,31 @@ function CompanyCard({
           {current}/{total}
         </div>
       </div>
-      <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--ink-2)", fontFamily: "var(--serif)", marginBottom: 12 }}>
+
+      <p style={{ fontSize: 15, lineHeight: 1.6, color: "var(--ink-2)", fontFamily: "var(--serif)", marginBottom: 8 }}>
         {company.description}
       </p>
+
+      {(websiteHref || company.size) && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginBottom: 12 }}>
+          {websiteHref && (
+            <a
+              href={websiteHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--muted)", textDecoration: "none" }}
+            >
+              ↗ {company.website}
+            </a>
+          )}
+          {company.size && (
+            <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--muted)" }}>
+              {company.size}
+            </span>
+          )}
+        </div>
+      )}
+
       <div style={{ background: "rgba(184, 84, 80, 0.06)", borderRadius: 8, padding: "10px 14px", marginBottom: 24, borderLeft: "3px solid var(--accent)" }}>
         <p style={{ fontSize: 13, lineHeight: 1.5, color: "var(--ink)", fontFamily: "var(--sans)", margin: 0 }}>
           {company.why_fit}
@@ -313,29 +388,71 @@ function CompanyCard({
 
       {!pendingDecision ? (
         <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={onSkip} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1.5px solid var(--line)", background: "transparent", fontSize: 14, fontFamily: "var(--sans)", color: "var(--muted)", cursor: "pointer", fontWeight: 500 }}>
-            Skip
+          <button
+            onClick={onSkip}
+            style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1.5px solid var(--line)", background: "transparent", fontSize: 14, fontFamily: "var(--sans)", color: "var(--muted)", cursor: "pointer", fontWeight: 500 }}
+          >
+            Not so interesting
           </button>
-          <button onClick={onKeep} style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "var(--accent)", fontSize: 14, fontFamily: "var(--sans)", color: "#fff", cursor: "pointer", fontWeight: 600 }}>
-            Keep →
+          <button
+            onClick={onKeep}
+            style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "var(--accent)", fontSize: 14, fontFamily: "var(--sans)", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+          >
+            Seems interesting →
           </button>
         </div>
       ) : (
         <div style={{ animation: "fadeIn 0.25s ease" }}>
           <div style={{ fontSize: 12, fontFamily: "var(--mono)", letterSpacing: "0.08em", textTransform: "uppercase", color: pendingDecision === "keep" ? "var(--accent)" : "var(--muted)", marginBottom: 12 }}>
-            {pendingDecision === "keep" ? "What resonated?" : "What didn't fit?"}
+            {pendingDecision === "keep" ? "What made it click?" : "What put you off?"}
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {(pendingDecision === "keep" ? keepReasons : skipReasons).map((reason) => (
-              <button
-                key={reason}
-                onClick={() => onFeedback(reason)}
-                style={{ padding: "8px 14px", borderRadius: 20, border: "1.5px solid var(--line)", background: "var(--bg)", fontSize: 13, fontFamily: "var(--sans)", color: "var(--ink)", cursor: "pointer", fontWeight: 500 }}
-              >
-                {reason}
-              </button>
-            ))}
-          </div>
+
+          {showChips && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+              {(pendingDecision === "keep" ? keepReasons : skipReasons).map((reason) => (
+                <button
+                  key={reason}
+                  onClick={() => toggleReason(reason)}
+                  style={{
+                    padding: "8px 14px", borderRadius: 20,
+                    border: selectedReasons.includes(reason) ? "1.5px solid var(--accent)" : "1.5px solid var(--line)",
+                    background: selectedReasons.includes(reason) ? "rgba(184,84,80,0.08)" : "var(--bg)",
+                    fontSize: 13, fontFamily: "var(--sans)",
+                    color: selectedReasons.includes(reason) ? "var(--accent)" : "var(--ink)",
+                    cursor: "pointer", fontWeight: 500,
+                  }}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+          )}
+
+          <textarea
+            value={freeText}
+            onChange={(e) => setFreeText(e.target.value)}
+            placeholder={showChips ? "Anything specific? (optional)" : "Tell me why — what felt off?"}
+            rows={2}
+            style={{
+              width: "100%", border: "1px solid var(--line)", borderRadius: 8,
+              padding: "10px 12px", fontFamily: "var(--serif)", fontSize: 14,
+              color: "var(--ink)", background: "var(--bg)", resize: "none",
+              boxSizing: "border-box", marginBottom: 12,
+            }}
+          />
+
+          <button
+            onClick={() => onFeedback(selectedReasons, freeText)}
+            disabled={!canSubmit}
+            style={{
+              width: "100%", padding: "12px", borderRadius: 10, border: "none",
+              background: canSubmit ? "var(--accent)" : "var(--line)",
+              color: "#fff", fontSize: 14, fontFamily: "var(--sans)",
+              cursor: canSubmit ? "pointer" : "default", fontWeight: 600,
+            }}
+          >
+            Done →
+          </button>
         </div>
       )}
     </div>
@@ -353,11 +470,14 @@ export default function Home() {
   const [s1Streaming, setS1Streaming] = useState(false);
   const [hypothesis, setHypothesis] = useState("");
   const [hypothesisVisible, setHypothesisVisible] = useState(false);
+  const [hypothesisActed, setHypothesisActed] = useState(false);
 
   // Stage 2
   const [companies, setCompanies] = useState<Company[]>([]);
   const [cardIndex, setCardIndex] = useState(0);
   const [keptCompanies, setKeptCompanies] = useState<KeptCompany[]>([]);
+  const [skippedCompanies, setSkippedCompanies] = useState<SkippedCompany[]>([]);
+  const [totalCompaniesReviewed, setTotalCompaniesReviewed] = useState(0);
   const [s2Loading, setS2Loading] = useState(false);
   const [pendingDecision, setPendingDecision] = useState<"keep" | "skip" | null>(null);
   const [previouslySeenCompanies, setPreviouslySeenCompanies] = useState<string[]>([]);
@@ -384,7 +504,6 @@ export default function Home() {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Sync currentDraft when queue advances
   useEffect(() => {
     if (outreachQueue[queueIndex]) {
       setCurrentDraft(outreachQueue[queueIndex].draft);
@@ -413,15 +532,18 @@ export default function Home() {
     ).finally(() => setS1Streaming(false));
   }, []);
 
-  const startStage2 = async (hyp: string, seen: string[] = previouslySeenCompanies) => {
+  const startStage2 = async (
+    hyp: string,
+    seen: string[] = previouslySeenCompanies,
+    skipped: SkippedCompany[] = skippedCompanies
+  ) => {
     setS2Loading(true);
     setCardIndex(0);
-    setKeptCompanies([]);
     setPendingDecision(null);
     let raw = "";
     await streamClaude(
       [{ role: "user", content: "Suggest companies." }],
-      getStage2System(hyp, seen),
+      getStage2System(hyp, seen, skipped),
       (chunk) => { raw += chunk; }
     );
     setS2Loading(false);
@@ -439,6 +561,8 @@ export default function Home() {
         description: "Cloud-based web development platform used by millions.",
         domain: "Developer Tools",
         why_fit: "Large eng org with deep investment in infra and platform tooling.",
+        website: "wix.com",
+        size: "5,000+ employees",
       }]);
     }
   };
@@ -491,16 +615,16 @@ export default function Home() {
     setGeneratingDrafts(false);
   };
 
-  const handleS1Submit = async () => {
-    if (!userInput.trim() || s1Streaming) return;
-
-    const userMsg: Message = { role: "user", content: userInput.trim() };
+  // Shared submission logic for Stage 1 chat
+  const submitS1Message = async (text: string) => {
+    if (!text.trim() || s1Streaming) return;
+    const userMsg: Message = { role: "user", content: text };
     const newMessages = [...messages, userMsg];
     setMessages([...newMessages, { role: "assistant", content: "" }]);
-    setUserInput("");
     setS1Streaming(true);
 
     let fullResponse = "";
+    let freshHypothesis = hypothesis;
     await streamClaude(newMessages, STAGE_1_SYSTEM, (chunk) => {
       fullResponse += chunk;
       setMessages((prev) => {
@@ -514,12 +638,12 @@ export default function Home() {
     });
     setS1Streaming(false);
 
-    let freshHypothesis = hypothesis;
     const hypothesisMatch = fullResponse.match(/\*\*Hypothesis:\*\*\s*([\s\S]+?)(?=---|$)/);
     if (hypothesisMatch) {
       freshHypothesis = hypothesisMatch[1].trim();
       setHypothesis(freshHypothesis);
       setHypothesisVisible(true);
+      setHypothesisActed(false); // Show buttons for new/refined hypothesis
     }
 
     if (fullResponse.includes("CONFIRMED")) {
@@ -528,17 +652,36 @@ export default function Home() {
     }
   };
 
-  const handleFeedback = (reason: string) => {
+  const handleS1Submit = async () => {
+    if (!userInput.trim() || s1Streaming) return;
+    const text = userInput.trim();
+    setUserInput("");
+    await submitS1Message(text);
+  };
+
+  const handleHypothesisButton = async (text: string) => {
+    setHypothesisActed(true);
+    await submitS1Message(text);
+  };
+
+  const handleFeedback = (reasons: string[], freeText: string) => {
     const decision = pendingDecision;
     setPendingDecision(null);
 
     const currentCompany = companies[cardIndex];
     let newKept = keptCompanies;
+    let newSkipped = skippedCompanies;
 
     if (decision === "keep") {
-      newKept = [...keptCompanies, { company: currentCompany, reason }];
+      const combinedReason = [...reasons, freeText].filter(Boolean).join("; ") || "Seems interesting";
+      newKept = [...keptCompanies, { company: currentCompany, reason: combinedReason }];
       setKeptCompanies(newKept);
+    } else {
+      newSkipped = [...skippedCompanies, { company: currentCompany, reasons, freeText }];
+      setSkippedCompanies(newSkipped);
     }
+
+    setTotalCompaniesReviewed((n) => n + 1);
 
     const newIndex = cardIndex + 1;
     setCardIndex(newIndex);
@@ -548,10 +691,8 @@ export default function Home() {
         const targets = newKept.slice(0, 3).map((k) => k.company);
         setTimeout(() => startStage3(targets, newKept, hypothesis), 800);
       } else {
-        const n = newKept.length;
-        const msg = `You kept ${n === 0 ? "none" : n} ${n === 1 ? "company" : "companies"} — not quite enough to build a solid outreach plan. Let's revisit. What felt off about the others?`;
-        setMessages((prev) => [...prev, { role: "assistant", content: msg }]);
-        setTimeout(() => setStage(1), 600);
+        // Lumen keeps going — auto-load another batch using accumulated feedback
+        setTimeout(() => startStage2(hypothesis, previouslySeenCompanies, newSkipped), 400);
       }
     }
   };
@@ -693,6 +834,24 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Hypothesis action buttons */}
+              {hypothesisVisible && !s1Streaming && !hypothesisActed && (
+                <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                  <button
+                    onClick={() => handleHypothesisButton("Let's refine it")}
+                    style={{ flex: 1, padding: "12px", borderRadius: 10, border: "1.5px solid var(--line)", background: "transparent", fontSize: 14, fontFamily: "var(--sans)", color: "var(--ink)", cursor: "pointer", fontWeight: 500 }}
+                  >
+                    Let&apos;s refine it
+                  </button>
+                  <button
+                    onClick={() => handleHypothesisButton("Yes, this works")}
+                    style={{ flex: 1, padding: "12px", borderRadius: 10, border: "none", background: "var(--accent)", fontSize: 14, fontFamily: "var(--sans)", color: "#fff", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    Yes, this works →
+                  </button>
+                </div>
+              )}
+
               {!s1Streaming && (
                 <div style={{ display: "flex", gap: 10, background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 14, padding: "10px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                   <textarea
@@ -736,7 +895,7 @@ export default function Home() {
                   Companies worth talking to.
                 </h1>
                 <p style={{ fontFamily: "var(--sans)", fontSize: 14, color: "var(--muted)", margin: 0 }}>
-                  Keep at least 3. Your reasons inform who to reach.
+                  Your reactions help Lumen find the right fit.
                 </p>
               </div>
 
@@ -747,6 +906,7 @@ export default function Home() {
                 </div>
               ) : cardIndex < companies.length ? (
                 <CompanyCard
+                  key={cardIndex}
                   company={companies[cardIndex]}
                   onKeep={handleKeep}
                   onSkip={handleSkip}
@@ -754,27 +914,29 @@ export default function Home() {
                   total={companies.length}
                   pendingDecision={pendingDecision}
                   onFeedback={handleFeedback}
+                  totalReviewed={totalCompaniesReviewed}
                 />
-              ) : keptCompanies.length === 0 ? (
-                <div>
-                  <p style={{ fontFamily: "var(--serif)", fontSize: 18, color: "var(--ink-2)", marginBottom: 20 }}>
-                    You skipped everything. Try relaxing a constraint?
-                  </p>
-                  <button
-                    onClick={() => { setCardIndex(0); setCompanies([]); startStage2(hypothesis); }}
-                    style={{ padding: "12px 24px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
-                  >
-                    Try again
-                  </button>
-                </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "80px 0", animation: "fadeIn 0.4s ease" }}>
-                  <p style={{ fontFamily: "var(--serif)", fontSize: 22, lineHeight: 1.55, color: "var(--ink)", margin: "0 0 10px" }}>
-                    Building your list for {keptCompanies.slice(0, 3).map((k) => k.company.name).join(", ")}.
-                  </p>
-                  <p style={{ fontFamily: "var(--sans)", fontSize: 15, color: "var(--muted)", margin: 0 }}>
-                    Finding the right people to talk to...
-                  </p>
+                  {keptCompanies.length >= 3 ? (
+                    <>
+                      <p style={{ fontFamily: "var(--serif)", fontSize: 22, lineHeight: 1.55, color: "var(--ink)", margin: "0 0 10px" }}>
+                        Building your list for {keptCompanies.slice(0, 3).map((k) => k.company.name).join(", ")}.
+                      </p>
+                      <p style={{ fontFamily: "var(--sans)", fontSize: 15, color: "var(--muted)", margin: 0 }}>
+                        Finding the right people to talk to...
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p style={{ fontFamily: "var(--serif)", fontSize: 22, lineHeight: 1.55, color: "var(--ink)", margin: "0 0 10px" }}>
+                        Finding more matches...
+                      </p>
+                      <p style={{ fontFamily: "var(--sans)", fontSize: 15, color: "var(--muted)", margin: 0 }}>
+                        Using your feedback to narrow things down.
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -1026,7 +1188,16 @@ export default function Home() {
                 Lumen will check in when replies come back.
               </p>
               <button
-                onClick={() => { setCardIndex(0); setCompanies([]); setKeptCompanies([]); setPendingDecision(null); setStage(2); startStage2(hypothesis, previouslySeenCompanies); }}
+                onClick={() => {
+                  setCardIndex(0);
+                  setCompanies([]);
+                  setKeptCompanies([]);
+                  setSkippedCompanies([]);
+                  setTotalCompaniesReviewed(0);
+                  setPendingDecision(null);
+                  setStage(2);
+                  startStage2(hypothesis, previouslySeenCompanies, []);
+                }}
                 style={{ padding: "14px 32px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
               >
                 Add more companies →
