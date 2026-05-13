@@ -1,0 +1,53 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]: lumen
+      - generic [ref=e5]:
+        - generic [ref=e8]: discover
+        - generic [ref=e12]: explore
+        - generic [ref=e16]: engage
+        - generic [ref=e20]: apply
+    - generic [ref=e22]:
+      - heading "Let's figure out what lights you up." [level=1] [ref=e23]
+      - generic [ref=e24]:
+        - generic [ref=e25]: What kind of work has felt most meaningful to you lately — even in small moments?
+        - generic [ref=e26]: Honestly, anything where I can see the direct impact. I built a small internal tool last month and people actually used it daily.
+        - generic [ref=e27]: That's a strong signal. You seem energized by tight feedback loops — shipping something and watching it land. What was the hardest part of building that tool?
+  - generic [ref=e28]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e31]: Watchlist
+        - button "✕" [ref=e32] [cursor=pointer]
+      - generic [ref=e33]: Companies that interest me · weighted by recency
+    - generic [ref=e34]:
+      - textbox "paste company URL..." [ref=e35]
+      - button "+" [ref=e36] [cursor=pointer]
+    - generic [ref=e37]:
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]: Wiz
+          - generic [ref=e41]: just now
+        - generic [ref=e42]: wiz.io
+        - img
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]: monday.com
+          - generic [ref=e49]: 2 days ago
+        - generic [ref=e50]: monday.com
+        - img
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]: Wolt
+          - generic [ref=e57]: 1 week ago
+        - generic [ref=e58]: wolt.com
+        - img
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - generic [ref=e64]: Fiverr
+          - generic [ref=e65]: 3 weeks ago
+        - generic [ref=e66]: fiverr.com
+        - img
+    - generic [ref=e70]: ↑ Lumen gives more weight to companies you added recently
+  - generic [ref=e71] [cursor=pointer]:
+    - generic [ref=e72]: 🏢
+    - generic [ref=e73]: watchlist
