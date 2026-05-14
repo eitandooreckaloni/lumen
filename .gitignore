@@ -43,3 +43,4 @@ logs/
 .cache/
 *.tmp
 .gstack/
+.vercel
