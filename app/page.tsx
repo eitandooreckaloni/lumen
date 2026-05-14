@@ -1,173 +1,22 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type Stage = 1 | 2 | 3 | 4 | 5;
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
-
-interface Company {
-  name: string;
-  stage: string;
-  description: string;
-  domain: string;
-  why_fit: string;
-  website?: string;
-  size?: string;
-}
-
-interface KeptCompany {
-  company: Company;
-  reason: string;
-}
-
-interface SkippedCompany {
-  company: Company;
-  reasons: string[];
-  freeText: string;
-}
-
-interface SuggestedPerson {
-  name: string | null;
-  role: string;
-  linkedinSearchUrl: string;
-  isKnown: boolean;
-}
-
-interface OutreachTarget {
-  company: Company;
-  person: SuggestedPerson;
-  draft: string;
-  status: "pending" | "sent" | "skipped";
-}
-
-// ─── Prompts ─────────────────────────────────────────────────────────────────
-
-const STAGE_1_SYSTEM = `You are Lumen, a sharp and warm networking coach for Israeli junior developers entering the job market for the first time.
-
-Your job: run a Mom Test-style behavioral interview to understand what they actually care about.
-
-Rules:
-- Ask exactly 5 questions, one at a time. Never ask two questions in the same message.
-- After each answer, acknowledge briefly (one sentence max) then ask the next question.
-- No follow-up questions, no tangents.
-- After the 5th answer is given, synthesize a hypothesis.
-
-Start with this question:
-1. "What's something you've worked on or learned about lately that really interests you — a topic, a problem, something you keep coming back to?"
-
-After they answer Q1, read their response to detect experience level:
-- If they mention specific projects, work, internships, or concrete technical work → use the **experienced path**
-- If they mention topics, interests, things they've been reading, or have no clear projects → use the **junior/exploring path**
-
-**Experienced path** (Q2–Q5):
-2. "When you're deep in that kind of work, what does it actually look like? What are you doing?"
-3. "What kind of work or tasks do you find yourself avoiding, even when you know you should do them?"
-4. "Tell me about a project or experience where something clicked — what made it work?"
-5. "What have you been working on or learning on your own time?"
-
-**Junior/exploring path** (Q2–Q5):
-2. "When you're in that mode — learning, reading, exploring — what does it actually look like?"
-3. "What kind of topics or activities feel draining or boring to you, even when you try?"
-4. "Tell me about something you learned that really clicked for you. What made it stick?"
-5. "How do you spend your time when there's no assignment or deadline driving you?"
-
-After the user answers the 5th question, write the hypothesis using this EXACT format:
-
----
-**Hypothesis:** [2-3 sentences: what they seem drawn to, what to avoid, and what kind of role/company fits]
----
-
-Then ask: "Does this feel right?"
-
-When the user confirms (says yes, sounds right, exactly, confirmed, etc.), respond with exactly this text and nothing else:
-CONFIRMED ✓
-
-Tone: direct, warm, like a sharp friend — not corporate, not a therapist.
-If asked about anything outside job search and networking, respond: "I'm scoped to the networking work. Happy to come back to that whenever."`;
-
-const getStage2System = (
-  hypothesis: string,
-  previousCompanies: string[] = [],
-  skipped: SkippedCompany[] = []
-) => {
-  const previousSection =
-    previousCompanies.length > 0
-      ? `\nPreviously shown companies: ${previousCompanies.join(", ")}.\nPrioritize NEW companies not on this list. Only re-suggest one if there is a meaningfully different reason given the updated context — if so, add a note in why_fit explaining why it still belongs.\n`
-      : "";
-
-  const skippedSection =
-    skipped.length > 0
-      ? `\nThe user passed on these companies. Use their feedback to suggest BETTER-FITTING alternatives:\n${skipped
-          .map((s) => {
-            const reasons = [...s.reasons, s.freeText].filter(Boolean).join(", ");
-            return `- ${s.company.name}: ${reasons || "not a fit"}`;
-          })
-          .join("\n")}\n`
-      : "";
-
-  return `You are Lumen. Based on this hypothesis, suggest 5 Israeli tech companies that would be a strong fit.
-
-Hypothesis: ${hypothesis}
-${previousSection}${skippedSection}
-Return ONLY a valid JSON array — no other text, no markdown code fences:
-[
-  {
-    "name": "company name",
-    "stage": "Series B",
-    "description": "one sentence: what they do",
-    "domain": "AI/ML",
-    "why_fit": "one specific sentence: why this fits the hypothesis — not generic",
-    "website": "company.com",
-    "size": "50–200 employees"
-  }
-]
-
-Only suggest Israeli companies. Mix of sizes (seed to post-IPO). Be specific in why_fit. Always include website and size.`;
-};
-
-const getStage3PeopleSystem = (hypothesis: string, company: string, keepReason: string) =>
-  `You are Lumen. Suggest people at ${company} for a junior Israeli developer to reach out to.
-
-Hypothesis: ${hypothesis}
-Why they kept this company: ${keepReason}
-
-Return ONLY a valid JSON object — no markdown, no extra text:
-{
-  "knownPeople": [
-    { "name": "Full Name", "role": "Their Title" }
-  ],
-  "roles": ["CEO", "Founder", "Head of Product", "VP Sales", "Head of R&D"]
-}
-
-Rules:
-- knownPeople: up to 3 real named people who actually work or worked at ${company}. Only include people you are confident exist. Use empty array if unsure.
-- roles: 4-6 role titles that match the hypothesis
-- Prioritize Israel-based or Israel-connected people
-- Avoid HR, recruiters, and generic management titles`;
-
-const getStage4DraftSystem = (
-  hypothesis: string,
-  personName: string | null,
-  personRole: string,
-  companyName: string
-) =>
-  `You are Lumen. Draft a LinkedIn outreach message for a junior Israeli developer.
-
-Target: ${personName ? personName : "a " + personRole} at ${companyName}
-User hypothesis: ${hypothesis}
-
-The message must be exactly 3 sentences:
-1. Niche: One specific reason this person/company matters given the hypothesis. Not generic.
-2. Humble: Acknowledge early-career status and genuine curiosity. Not asking for a job.
-3. CTA: One specific low-ask. "15 minutes to ask you about X." Never vague.
-
-Output ONLY the message. No labels, no preamble. Just the 3 sentences.`;
+import type { Stage, Message, Company, KeptCompany, SkippedCompany, SuggestedPerson, OutreachTarget, Contact } from "../lib/types";
+import {
+  STAGE_1_SYSTEM,
+  getStage2System,
+  getStage3PeopleSystem,
+  getStage4DraftSystem,
+  getStage6SentimentSystem,
+  getStage6CelebrationSystem,
+  getStage6RejectionSystem,
+  getStage7PrepSystem,
+  DEBRIEF_QUESTIONS,
+  getStage8SynthesisSystem,
+  getCompressionSystem,
+} from "../lib/prompts";
+import { useAppState, mostUrgentContact } from "../hooks/useAppState";
+import { PrepCard } from "../components/PrepCard";
 
 // ─── Stream helper ────────────────────────────────────────────────────────────
 
@@ -219,10 +68,32 @@ async function streamClaude(
 // ─── Markdown renderer ────────────────────────────────────────────────────────
 
 function renderMarkdown(text: string): React.ReactNode {
-  const parts = text.split("**");
-  return parts.map((part, i) =>
-    i % 2 === 1 ? <strong key={i}>{part}</strong> : <span key={i}>{part}</span>
-  );
+  // Handle newlines first by splitting into paragraphs
+  const lines = text.split("\n");
+  return lines.map((line, lineIdx) => {
+    // Process bold (**text**) and italic (*text*)
+    const segments: React.ReactNode[] = [];
+    const pattern = /(\*\*[^*]+\*\*|\*[^*]+\*)/g;
+    let last = 0;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(line)) !== null) {
+      if (match.index > last) segments.push(line.slice(last, match.index));
+      const raw = match[0];
+      if (raw.startsWith("**")) {
+        segments.push(<strong key={match.index}>{raw.slice(2, -2)}</strong>);
+      } else {
+        segments.push(<em key={match.index}>{raw.slice(1, -1)}</em>);
+      }
+      last = match.index + raw.length;
+    }
+    if (last < line.length) segments.push(line.slice(last));
+    return (
+      <span key={lineIdx}>
+        {segments}
+        {lineIdx < lines.length - 1 && <br />}
+      </span>
+    );
+  });
 }
 
 // ─── Stage indicator ──────────────────────────────────────────────────────────
@@ -461,8 +332,11 @@ function CompanyCard({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
 export default function Home() {
   const [stage, setStage] = useState<Stage>(1);
+  const { appState, loadAppState, initAppState, addContact, updateContact, addDebrief, updateLearnings } = useAppState();
 
   // Stage 1
   const [messages, setMessages] = useState<Message[]>([]);
@@ -497,6 +371,26 @@ export default function Home() {
   const [generatingDrafts, setGeneratingDrafts] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Stage 6
+  const [activeContact, setActiveContact] = useState<Contact | null>(null);
+  const [s6ReplyInput, setS6ReplyInput] = useState("");
+  const [s6Classifying, setS6Classifying] = useState(false);
+  const [s6LumenMessage, setS6LumenMessage] = useState("");
+  const [s6Streaming, setS6Streaming] = useState(false);
+  const [s6ShowReplyInput, setS6ShowReplyInput] = useState(false);
+
+  // Stage 7
+  const [prepCard, setPrepCard] = useState<{ header: string; question: string; warning: string } | null>(null);
+  const [s7Loading, setS7Loading] = useState(false);
+
+  // Stage 8
+  const [debriefStep, setDebriefStep] = useState(0);
+  const [debriefAnswers, setDebriefAnswers] = useState<string[]>([]);
+  const [debriefInput, setDebriefInput] = useState("");
+  const [s8Streaming, setS8Streaming] = useState(false);
+  const [s8LumenMessage, setS8LumenMessage] = useState("");
+  const [s8Compressing, setS8Compressing] = useState(false);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -511,10 +405,24 @@ export default function Home() {
     }
   }, [queueIndex, outreachQueue]);
 
-  // Stage 1 opening message
+  // Mount: check localStorage before starting Stage 1
   const s1Started = useRef(false);
   useEffect(() => {
     if (s1Started.current) return;
+
+    const stored = loadAppState();
+    if (stored && stored.contacts.length > 0) {
+      // Resume coaching loop
+      setHypothesis(stored.hypothesis);
+      const urgent = mostUrgentContact(stored.contacts);
+      if (urgent) {
+        setActiveContact(urgent);
+        setStage(6);
+      }
+      return;
+    }
+
+    // No existing state — start Stage 1
     s1Started.current = true;
     const opening: Message = { role: "assistant", content: "" };
     setMessages([opening]);
@@ -530,7 +438,7 @@ export default function Home() {
         });
       }
     ).finally(() => setS1Streaming(false));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const startStage2 = async (
     hyp: string,
@@ -615,7 +523,6 @@ export default function Home() {
     setGeneratingDrafts(false);
   };
 
-  // Shared submission logic for Stage 1 chat
   const submitS1Message = async (text: string) => {
     if (!text.trim() || s1Streaming) return;
     const userMsg: Message = { role: "user", content: text };
@@ -643,7 +550,7 @@ export default function Home() {
       freshHypothesis = hypothesisMatch[1].trim();
       setHypothesis(freshHypothesis);
       setHypothesisVisible(true);
-      setHypothesisActed(false); // Show buttons for new/refined hypothesis
+      setHypothesisActed(false);
     }
 
     if (fullResponse.includes("CONFIRMED")) {
@@ -691,7 +598,6 @@ export default function Home() {
         const targets = newKept.slice(0, 3).map((k) => k.company);
         setTimeout(() => startStage3(targets, newKept, hypothesis), 800);
       } else {
-        // Lumen keeps going — auto-load another batch using accumulated feedback
         setTimeout(() => startStage2(hypothesis, previouslySeenCompanies, newSkipped), 400);
       }
     }
@@ -735,6 +641,32 @@ export default function Home() {
   };
 
   const handleQueueAction = (action: "sent" | "skipped") => {
+    const target = outreachQueue[queueIndex];
+
+    if (action === "sent") {
+      // Create Contact in AppState immediately — durable at the click moment
+      const newContact: Contact = {
+        id: crypto.randomUUID(),
+        name: target.person.name ?? target.person.role,
+        company: target.company.name,
+        linkedinUrl: target.person.linkedinSearchUrl,
+        stage: "sent",
+        draftSavedAt: Date.now(),
+        prepCompleted: false,
+        debriefs: [],
+      };
+
+      // Initialize AppState if this is the first sent contact
+      if (!appState) {
+        const state = initAppState(hypothesis);
+        // addContact needs the state to exist first; initAppState sets it, then we add
+        setTimeout(() => addContact(newContact), 0);
+        void state;
+      } else {
+        addContact(newContact);
+      }
+    }
+
     const updated = [...outreachQueue];
     updated[queueIndex] = { ...updated[queueIndex], draft: currentDraft, status: action };
     setOutreachQueue(updated);
@@ -765,9 +697,156 @@ export default function Home() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ─── Stage 6 handlers ───────────────────────────────────────────────────────
+
+  const handleS6ReplySubmit = async () => {
+    if (!activeContact || !s6ReplyInput.trim()) return;
+    setS6Classifying(true);
+
+    let raw = "";
+    await streamClaude(
+      [{ role: "user", content: `Reply text: "${s6ReplyInput}"` }],
+      getStage6SentimentSystem(),
+      (chunk) => { raw += chunk; }
+    );
+    setS6Classifying(false);
+
+    let sentiment: "positive" | "rejection" = "positive";
+    try {
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        // neutral routes same as positive per design doc
+        sentiment = parsed.sentiment === "rejection" ? "rejection" : "positive";
+      }
+    } catch { /* default to positive */ }
+
+    const updatedContact: Partial<Contact> = {
+      replyText: s6ReplyInput,
+      replySentiment: sentiment,
+      stage: "replied",
+    };
+    updateContact(activeContact.id, updatedContact);
+    setActiveContact((prev) => prev ? { ...prev, ...updatedContact } : prev);
+
+    // Stream Lumen's response
+    setS6Streaming(true);
+    setS6LumenMessage("");
+    const contactWithReply = { ...activeContact, ...updatedContact } as Contact;
+    const systemPrompt = sentiment === "positive"
+      ? getStage6CelebrationSystem(contactWithReply, hypothesis)
+      : getStage6RejectionSystem(contactWithReply);
+
+    await streamClaude(
+      [{ role: "user", content: "I got a reply." }],
+      systemPrompt,
+      (chunk) => setS6LumenMessage((prev) => prev + chunk)
+    );
+    setS6Streaming(false);
+  };
+
+  const handleMeetingScheduled = () => {
+    if (!activeContact) return;
+    updateContact(activeContact.id, { stage: "meeting_prep" });
+    setActiveContact((prev) => prev ? { ...prev, stage: "meeting_prep" } : prev);
+    loadPrepCard();
+  };
+
+  const loadPrepCard = async () => {
+    if (!activeContact) return;
+    setS7Loading(true);
+    setStage(7);
+    let raw = "";
+    const contactForPrep = activeContact.stage === "meeting_prep"
+      ? activeContact
+      : { ...activeContact, stage: "meeting_prep" as const };
+    await streamClaude(
+      [{ role: "user", content: "Prepare me for this conversation." }],
+      getStage7PrepSystem(contactForPrep, hypothesis, appState?.learningsSummary ?? ""),
+      (chunk) => { raw += chunk; }
+    );
+    setS7Loading(false);
+    try {
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        setPrepCard(JSON.parse(jsonMatch[0]));
+      }
+    } catch {
+      setPrepCard({
+        header: `${activeContact.name} · ${activeContact.company}`,
+        question: "What does ownership actually look like day-to-day on your team?",
+        warning: "Don't ask about salary or timelines. You're here to learn.",
+      });
+    }
+  };
+
+  const handlePrepReady = () => {
+    if (!activeContact) return;
+    updateContact(activeContact.id, { prepCompleted: true, stage: "debrief_pending" });
+    setActiveContact((prev) => prev ? { ...prev, prepCompleted: true, stage: "debrief_pending" } : prev);
+    setDebriefStep(0);
+    setDebriefAnswers([]);
+    setS8LumenMessage("");
+    setStage(8);
+  };
+
+  // ─── Stage 8 handlers ───────────────────────────────────────────────────────
+
+  const handleDebriefAnswer = async () => {
+    if (!debriefInput.trim() || !activeContact) return;
+    const answer = debriefInput.trim();
+    const newAnswers = [...debriefAnswers, answer];
+    setDebriefAnswers(newAnswers);
+    setDebriefInput("");
+
+    if (debriefStep < DEBRIEF_QUESTIONS.length - 1) {
+      setDebriefStep((s) => s + 1);
+      return;
+    }
+
+    // All 3 answers collected — synthesize
+    const debrief = {
+      date: Date.now(),
+      surprise: newAnswers[0],
+      selfLearning: newAnswers[1],
+      marketLearning: newAnswers[2],
+    };
+
+    setS8Streaming(true);
+    setS8LumenMessage("");
+    await streamClaude(
+      [{ role: "user", content: "Here's what I learned." }],
+      getStage8SynthesisSystem(activeContact, debrief, hypothesis, appState?.learningsSummary ?? ""),
+      (chunk) => setS8LumenMessage((prev) => prev + chunk)
+    );
+    setS8Streaming(false);
+
+    // Persist debrief
+    addDebrief(activeContact.id, debrief);
+    setActiveContact((prev) => prev ? { ...prev, stage: "done", debriefs: [...prev.debriefs, debrief] } : prev);
+
+    // Compress learningsSummary in background
+    setS8Compressing(true);
+    const existingSummary = appState?.learningsSummary ?? "";
+    const compressionInput = `${existingSummary}\n\nNew debrief with ${activeContact.name} at ${activeContact.company}:\n- Surprise: ${debrief.surprise}\n- Self-learning: ${debrief.selfLearning}\n- Market learning: ${debrief.marketLearning}`;
+    let compressed = "";
+    await streamClaude(
+      [{ role: "user", content: compressionInput }],
+      getCompressionSystem(),
+      (chunk) => { compressed += chunk; }
+    );
+    setS8Compressing(false);
+    updateLearnings(compressed.trim());
+  };
+
   const currentTarget = outreachQueue[queueIndex];
   const selectedForCurrentCompany = selectedPeople.filter(
     (t) => targetCompanies[companyIndex] && t.company.name === targetCompanies[companyIndex].name
+  );
+
+  const activeContacts = appState?.contacts.filter((c) => c.stage !== "done") ?? [];
+  const showNudgeBanner = activeContacts.some(
+    (c) => c.stage === "sent" && Date.now() - c.draftSavedAt > THREE_DAYS_MS
   );
 
   // ── Render ──
@@ -794,8 +873,24 @@ export default function Home() {
           <div style={{ fontFamily: "var(--serif)", fontStyle: "italic", fontSize: 22, color: "var(--accent)", fontWeight: 400, letterSpacing: "-0.01em" }}>
             lumen
           </div>
-          <StageIndicator stage={stage} />
+          {stage <= 5 ? (
+            <StageIndicator stage={stage} />
+          ) : activeContacts.length > 0 ? (
+            <div style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.08em" }}>
+              {activeContacts.length} in progress
+            </div>
+          ) : null}
         </header>
+
+        {/* 3-day nudge banner */}
+        {showNudgeBanner && stage >= 6 && (
+          <div style={{
+            background: "rgba(193,123,123,0.08)", borderBottom: "1px solid rgba(193,123,123,0.2)",
+            padding: "10px 32px", fontFamily: "var(--serif)", fontSize: 14, color: "var(--ink)",
+          }}>
+            Lumen has something for you — a contact is waiting for a follow-up.
+          </div>
+        )}
 
         {/* Content */}
         <div style={{ flex: 1, maxWidth: 640, width: "100%", margin: "0 auto", padding: "32px 24px 100px" }}>
@@ -834,7 +929,6 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Hypothesis action buttons */}
               {hypothesisVisible && !s1Streaming && !hypothesisActed && (
                 <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
                   <button
@@ -965,8 +1059,6 @@ export default function Home() {
                 </div>
               ) : suggestedPeople && (
                 <div style={{ animation: "fadeIn 0.3s ease" }}>
-
-                  {/* Known people */}
                   {suggestedPeople.knownPeople.length > 0 && (
                     <div style={{ marginBottom: 28 }}>
                       <div style={{ fontSize: 11, fontFamily: "var(--mono)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 12 }}>
@@ -1005,7 +1097,6 @@ export default function Home() {
                     </div>
                   )}
 
-                  {/* Search by role */}
                   <div style={{ marginBottom: 32 }}>
                     <div style={{ fontSize: 11, fontFamily: "var(--mono)", letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 12 }}>
                       Search by Role
@@ -1042,7 +1133,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Navigation */}
                   {companyIndex < targetCompanies.length - 1 ? (
                     <button
                       onClick={handleNextCompany}
@@ -1077,7 +1167,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* ── Stage 4: CRM queue ── */}
+          {/* ── Stage 4: Draft queue ── */}
           {stage === 4 && generatingDrafts && (
             <div style={{ textAlign: "center", padding: "80px 0", animation: "fadeIn 0.4s ease" }}>
               <div style={{ width: 24, height: 24, border: "2px solid var(--line)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 20px" }} />
@@ -1092,7 +1182,6 @@ export default function Home() {
 
           {stage === 4 && !generatingDrafts && currentTarget && (
             <div style={{ animation: "fadeIn 0.3s ease" }}>
-              {/* Progress */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
                 <div>
                   <div style={{ fontSize: 12, fontFamily: "var(--mono)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 2 }}>
@@ -1112,7 +1201,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* LinkedIn link */}
               <div style={{ marginBottom: 20 }}>
                 <a
                   href={currentTarget.person.linkedinSearchUrl}
@@ -1127,7 +1215,6 @@ export default function Home() {
                 </a>
               </div>
 
-              {/* Draft */}
               <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 16, padding: 28, marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
                 <textarea
                   value={currentDraft}
@@ -1144,34 +1231,32 @@ export default function Home() {
               </div>
 
               {!s4Streaming && (
-                <>
-                  <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-                    <button
-                      onClick={handleRegenerate}
-                      style={{ padding: "12px 18px", background: "transparent", color: "var(--muted)", border: "1.5px solid var(--line)", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
-                    >
-                      Regenerate
-                    </button>
-                    <button
-                      onClick={handleCopy}
-                      style={{ padding: "12px 18px", background: copied ? "rgba(184,84,80,0.1)" : "transparent", color: copied ? "var(--accent)" : "var(--ink)", border: "1.5px solid var(--line)", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
-                    >
-                      {copied ? "Copied!" : "Copy"}
-                    </button>
-                    <button
-                      onClick={() => handleQueueAction("skipped")}
-                      style={{ padding: "12px 18px", background: "transparent", color: "var(--muted)", border: "1.5px solid var(--line)", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
-                    >
-                      Skip
-                    </button>
-                    <button
-                      onClick={() => handleQueueAction("sent")}
-                      style={{ flex: 1, padding: "12px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
-                    >
-                      I sent it →
-                    </button>
-                  </div>
-                </>
+                <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+                  <button
+                    onClick={handleRegenerate}
+                    style={{ padding: "12px 18px", background: "transparent", color: "var(--muted)", border: "1.5px solid var(--line)", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
+                  >
+                    Regenerate
+                  </button>
+                  <button
+                    onClick={handleCopy}
+                    style={{ padding: "12px 18px", background: copied ? "rgba(184,84,80,0.1)" : "transparent", color: copied ? "var(--accent)" : "var(--ink)", border: "1.5px solid var(--line)", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
+                  >
+                    {copied ? "Copied!" : "Copy"}
+                  </button>
+                  <button
+                    onClick={() => handleQueueAction("skipped")}
+                    style={{ padding: "12px 18px", background: "transparent", color: "var(--muted)", border: "1.5px solid var(--line)", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
+                  >
+                    Skip
+                  </button>
+                  <button
+                    onClick={() => handleQueueAction("sent")}
+                    style={{ flex: 1, padding: "12px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    I sent it →
+                  </button>
+                </div>
               )}
             </div>
           )}
@@ -1190,6 +1275,7 @@ export default function Home() {
               </p>
               <button
                 onClick={() => {
+                  // Preserve AppState — only reset Stage 2-4 state
                   setCardIndex(0);
                   setCompanies([]);
                   setKeptCompanies([]);
@@ -1203,6 +1289,247 @@ export default function Home() {
               >
                 Add more companies →
               </button>
+            </div>
+          )}
+
+          {/* ── Stage 6: Reply tracking ── */}
+          {stage === 6 && activeContact && (
+            <div style={{ animation: "fadeIn 0.4s ease" }}>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 12, fontFamily: "var(--mono)", letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 4 }}>
+                  {activeContact.company}
+                </div>
+                <h1 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, margin: "0 0 6px", color: "var(--ink)" }}>
+                  {activeContact.name}
+                </h1>
+              </div>
+
+              {/* Lumen's opening nudge or response */}
+              {!s6LumenMessage && !s6Streaming && (
+                <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "18px 18px 18px 4px", padding: "14px 18px", marginBottom: 20, fontSize: 15, lineHeight: 1.6, fontFamily: "var(--serif)", color: "var(--ink)" }}>
+                  {activeContact.stage === "sent" ? (
+                    <>
+                      You sent a message to {activeContact.name} at {activeContact.company}
+                      {activeContact.draftSavedAt && ` — ${Math.floor((Date.now() - activeContact.draftSavedAt) / (1000 * 60 * 60 * 24))} days ago`}.
+                      Did you get a reply?
+                    </>
+                  ) : activeContact.stage === "replied" && activeContact.replySentiment === "positive" ? (
+                    <>They replied. Let&apos;s get you ready. Did you schedule a meeting?</>
+                  ) : (
+                    <>What happened with {activeContact.name}?</>
+                  )}
+                </div>
+              )}
+
+              {s6LumenMessage && (
+                <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "18px 18px 18px 4px", padding: "14px 18px", marginBottom: 20, fontSize: 15, lineHeight: 1.6, fontFamily: "var(--serif)", color: "var(--ink)" }}>
+                  {renderMarkdown(s6LumenMessage)}
+                  {s6Streaming && <span style={{ display: "inline-block", width: 2, height: "1em", background: "currentColor", marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 1s step-end infinite" }} />}
+                </div>
+              )}
+
+              {/* Action buttons — before reply is submitted */}
+              {!s6LumenMessage && !s6Streaming && !s6ShowReplyInput && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  <button
+                    onClick={() => setS6ShowReplyInput(true)}
+                    style={{ width: "100%", padding: "14px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    Yes, I got a reply →
+                  </button>
+                  <button
+                    onClick={() => {
+                      // No reply — normalize silence
+                      setS6LumenMessage(`Silence is normal. Most people reply within 2-5 days. If you don't hear back by ${new Date(activeContact.draftSavedAt + 7 * 24 * 60 * 60 * 1000).toLocaleDateString("en-IL", { weekday: "long", month: "short", day: "numeric" })}, one short follow-up is appropriate — and I'll help you write it.`);
+                    }}
+                    style={{ width: "100%", padding: "14px", background: "transparent", color: "var(--muted)", border: "1.5px solid var(--line)", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
+                  >
+                    No reply yet
+                  </button>
+                </div>
+              )}
+
+              {/* Reply input */}
+              {s6ShowReplyInput && !s6LumenMessage && (
+                <div>
+                  <div style={{ fontSize: 12, fontFamily: "var(--mono)", letterSpacing: "0.08em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>
+                    Paste their reply
+                  </div>
+                  <textarea
+                    value={s6ReplyInput}
+                    onChange={(e) => setS6ReplyInput(e.target.value)}
+                    placeholder="Paste what they said..."
+                    rows={4}
+                    style={{ width: "100%", border: "1px solid var(--line)", borderRadius: 10, padding: "12px 14px", fontFamily: "var(--serif)", fontSize: 15, color: "var(--ink)", background: "var(--paper)", resize: "none", marginBottom: 12, boxSizing: "border-box" }}
+                  />
+                  <button
+                    onClick={handleS6ReplySubmit}
+                    disabled={!s6ReplyInput.trim() || s6Classifying}
+                    style={{ width: "100%", padding: "14px", background: s6ReplyInput.trim() ? "var(--accent)" : "var(--line)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: s6ReplyInput.trim() ? "pointer" : "default", fontWeight: 600 }}
+                  >
+                    {s6Classifying ? "Reading the reply..." : "Lumen, read this →"}
+                  </button>
+                </div>
+              )}
+
+              {/* Post-reply actions: meeting scheduled or not */}
+              {s6LumenMessage && !s6Streaming && activeContact.replySentiment === "positive" && activeContact.stage === "replied" && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+                  <button
+                    onClick={handleMeetingScheduled}
+                    style={{ width: "100%", padding: "14px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    I have a meeting scheduled →
+                  </button>
+                  <button
+                    onClick={() => {
+                      // No meeting yet — update to show we're in a waiting state
+                      updateContact(activeContact.id, { stage: "replied" });
+                      setS6LumenMessage((prev) => prev + "\n\nNo meeting yet — that's fine. Come back when you have a date and I'll prep you.");
+                    }}
+                    style={{ width: "100%", padding: "14px", background: "transparent", color: "var(--muted)", border: "1.5px solid var(--line)", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 500 }}
+                  >
+                    No meeting yet
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Stage 7: Meeting prep ── */}
+          {stage === 7 && (
+            <div style={{ animation: "fadeIn 0.4s ease" }}>
+              <div style={{ marginBottom: 28 }}>
+                <h1 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, margin: "0 0 6px", color: "var(--ink)" }}>
+                  Let&apos;s get you ready.
+                </h1>
+                <p style={{ fontFamily: "var(--sans)", fontSize: 14, color: "var(--muted)", margin: 0 }}>
+                  One question. One thing to avoid. That&apos;s all you need.
+                </p>
+              </div>
+
+              {s7Loading ? (
+                <div style={{ textAlign: "center", padding: "60px 0", color: "var(--muted)", fontFamily: "var(--serif)", fontSize: 16 }}>
+                  <div style={{ width: 24, height: 24, border: "2px solid var(--line)", borderTopColor: "var(--accent)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+                  Lumen is reading the conversation...
+                </div>
+              ) : prepCard ? (
+                <PrepCard
+                  header={prepCard.header}
+                  question={prepCard.question}
+                  warning={prepCard.warning}
+                  onReady={handlePrepReady}
+                />
+              ) : null}
+            </div>
+          )}
+
+          {/* ── Stage 8: Post-meeting debrief ── */}
+          {stage === 8 && (
+            <div style={{ animation: "fadeIn 0.4s ease" }}>
+              <div style={{ marginBottom: 24 }}>
+                <h1 style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 400, margin: "0 0 6px", color: "var(--ink)" }}>
+                  How did it go?
+                </h1>
+                <p style={{ fontFamily: "var(--sans)", fontSize: 14, color: "var(--muted)", margin: 0 }}>
+                  3 questions. Be honest — this is how your hypothesis gets smarter.
+                </p>
+              </div>
+
+              {!s8LumenMessage ? (
+                <div>
+                  {/* Progress dots */}
+                  <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
+                    {DEBRIEF_QUESTIONS.map((_, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          width: 8, height: 8, borderRadius: "50%",
+                          background: i < debriefStep ? "var(--accent)" : i === debriefStep ? "var(--accent)" : "var(--line)",
+                          opacity: i === debriefStep ? 1 : i < debriefStep ? 0.5 : 0.3,
+                        }}
+                      />
+                    ))}
+                  </div>
+
+                  <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "18px 18px 18px 4px", padding: "14px 18px", marginBottom: 20, fontSize: 15, lineHeight: 1.6, fontFamily: "var(--serif)", color: "var(--ink)" }}>
+                    {renderMarkdown(DEBRIEF_QUESTIONS[debriefStep])}
+                  </div>
+
+                  {/* Show prior answers */}
+                  {debriefAnswers.map((answer, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "flex-end", marginBottom: 12 }}>
+                      <div style={{ maxWidth: "75%", padding: "12px 16px", borderRadius: "18px 18px 4px 18px", background: "var(--accent)", color: "#fff", fontSize: 15, lineHeight: 1.6, fontFamily: "var(--serif)" }}>
+                        {answer}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div style={{ display: "flex", gap: 10, background: "var(--paper)", border: "1px solid var(--line)", borderRadius: 14, padding: "10px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                    <textarea
+                      value={debriefInput}
+                      onChange={(e) => setDebriefInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleDebriefAnswer(); } }}
+                      placeholder="Your answer..."
+                      rows={2}
+                      style={{ flex: 1, border: "none", background: "transparent", fontFamily: "var(--serif)", fontSize: 15, color: "var(--ink)", resize: "none", lineHeight: 1.5 }}
+                    />
+                    <button
+                      onClick={handleDebriefAnswer}
+                      disabled={!debriefInput.trim()}
+                      style={{
+                        alignSelf: "flex-end", width: 36, height: 36, borderRadius: "50%",
+                        background: debriefInput.trim() ? "var(--accent)" : "var(--line)",
+                        border: "none", cursor: debriefInput.trim() ? "pointer" : "default",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: "#fff", fontSize: 16, flexShrink: 0,
+                      }}
+                    >
+                      ↑
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ background: "var(--paper)", border: "1px solid var(--line)", borderRadius: "18px 18px 18px 4px", padding: "14px 18px", marginBottom: 20, fontSize: 15, lineHeight: 1.6, fontFamily: "var(--serif)", color: "var(--ink)" }}>
+                    {renderMarkdown(s8LumenMessage)}
+                    {s8Streaming && <span style={{ display: "inline-block", width: 2, height: "1em", background: "currentColor", marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 1s step-end infinite" }} />}
+                  </div>
+
+                  {!s8Streaming && (
+                    <div style={{ marginTop: 8 }}>
+                      {s8Compressing && (
+                        <p style={{ fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", marginBottom: 16 }}>
+                          Lumen is updating your hypothesis...
+                        </p>
+                      )}
+                      {!s8Compressing && (
+                        <button
+                          onClick={() => {
+                            // Find next active contact or go back to Stage 6 with a new one
+                            const remaining = appState?.contacts.filter((c) => c.stage !== "done") ?? [];
+                            if (remaining.length > 0) {
+                              setActiveContact(remaining[0]);
+                              setS6LumenMessage("");
+                              setS6ShowReplyInput(false);
+                              setS6ReplyInput("");
+                              setStage(6);
+                            } else {
+                              // All contacts done — show stage 5 to add more
+                              setStage(5);
+                            }
+                          }}
+                          style={{ width: "100%", padding: "14px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontFamily: "var(--sans)", cursor: "pointer", fontWeight: 600 }}
+                        >
+                          {(appState?.contacts.filter((c) => c.stage !== "done").length ?? 0) > 0
+                            ? "Next contact →"
+                            : "Add more companies →"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
